@@ -5,7 +5,7 @@ from datetime import datetime
 app = Flask(__name__)
 
 # === CONFIGURA TU CONTRASEÑA DE ADMIN AQUI ===
-ADMIN_PASSWORD = "AGL2026"  # CAMBIALA A LA QUE QUIERAS BRO
+ADMIN_PASSWORD = "AGL2026"
 
 viajes = []
 choferes_db = []
@@ -92,7 +92,60 @@ input{flex:1;border:none;outline:none;font-size:14px;font-weight:600;background:
 const NUMERO="524491909860";
 let map,origenMarker=null,destinoMarker=null,parada1Marker=null,parada2Marker=null,parada3Marker=null,routeLine,kmActual=0,precioActual=0,numParadasVisibles=0,capaMapa,capaSate;
 function toggleMenu(){document.getElementById('menu').classList.toggle('act');document.getElementById('overlay').classList.toggle('act');}
-function elegirRol(r){localStorage.setItem('rol_AGL',r);document.getElementById('modal-rol').style.display='none';if(r==='chofer'){document.getElementById('vista-cliente').style.display='none';document.getElementById('vista-chofer').style.display='block';document.getElementById('vista-admin').style.display='none';verificarSesionChofer();}else if(r==='admin'){document.getElementById('vista-cliente').style.display='none';document.getElementById('vista-chofer').style.display='none';document.getElementById('vista-admin').style.display='block';document.getElementById('admin-login').style.display='block';document.getElementById('admin-panel').style.display='none';}else{document.getElementById('vista-chofer').style.display='none';document.getElementById('vista-admin').style.display='none';document.getElementById('vista-cliente').style.display='block';verificarSesionCliente();setTimeout(()=>{ if(map) map.invalidateSize(); },500);}}
+function elegirRol(r){
+  localStorage.setItem('rol_AGL',r);
+  document.getElementById('modal-rol').style.display='none';
+  if(r==='chofer'){
+    document.getElementById('vista-cliente').style.display='none';
+    document.getElementById('vista-chofer').style.display='block';
+    document.getElementById('vista-admin').style.display='none';
+    verificarSesionChofer();
+  }else if(r==='admin'){
+    document.getElementById('vista-cliente').style.display='none';
+    document.getElementById('vista-chofer').style.display='none';
+    document.getElementById('vista-admin').style.display='block';
+  }else{
+    document.getElementById('vista-chofer').style.display='none';
+    document.getElementById('vista-admin').style.display='none';
+    document.getElementById('vista-cliente').style.display='block';
+    verificarSesionCliente();
+    setTimeout(()=>{ if(map) map.invalidateSize(); },500);
+  }
+}
+
+// ESTE ES EL FIX PARA QUE SIEMPRE PIDA REGISTRO
+function verificarSesionCliente(){
+  let a=JSON.parse(localStorage.getItem('clienteActual')||'null');
+  if(a){
+    // si está bloqueado no dejarlo
+    fetch('/api/cliente/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tel:a.tel,pass:a.pass})})
+    .then(r=>r.json()).then(d=>{
+      if(!d.ok){ localStorage.removeItem('clienteActual'); document.getElementById('box-login-cliente').style.display='block'; document.getElementById('box-cliente-viaje').style.display='none'; return; }
+      document.getElementById('box-login-cliente').style.display='none';
+      document.getElementById('box-cliente-viaje').style.display='block';
+      setTimeout(()=>{ map.invalidateSize(); },400);
+    });
+  }else{
+    document.getElementById('box-login-cliente').style.display='block';
+    document.getElementById('box-cliente-viaje').style.display='none';
+  }
+}
+function verificarSesionChofer(){
+  let a=JSON.parse(localStorage.getItem('choferActual')||'null');
+  if(a){
+    fetch('/api/chofer/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tel:a.tel,pass:a.pass})})
+    .then(r=>r.json()).then(d=>{
+      if(!d.ok){ alert(d.error); localStorage.removeItem('choferActual'); document.getElementById('box-login-chofer').style.display='block'; document.getElementById('box-viajes-chofer').style.display='none'; return; }
+      document.getElementById('box-login-chofer').style.display='none';
+      document.getElementById('box-viajes-chofer').style.display='block';
+      document.getElementById('nombre-chofer-log').innerText='👤 '+a.nombre;
+      mostrarViajesChofer();
+    });
+  }else{
+    document.getElementById('box-login-chofer').style.display='block';
+    document.getElementById('box-viajes-chofer').style.display='none';
+  }
+}
 function cambiarRol(){localStorage.removeItem('rol_AGL');location.reload();}
 function volverAlInicio(){localStorage.removeItem('rol_AGL');document.getElementById('vista-cliente').style.display='none';document.getElementById('vista-chofer').style.display='none';document.getElementById('vista-admin').style.display='none';document.getElementById('modal-rol').style.display='flex';}
 (function(){let r=(localStorage.getItem('rol_AGL')||'').toLowerCase();if(r){document.getElementById('modal-rol').style.display='none';if(r==='chofer'){document.getElementById('vista-cliente').style.display='none';document.getElementById('vista-chofer').style.display='block';}else if(r==='admin'){document.getElementById('vista-cliente').style.display='none';document.getElementById('vista-chofer').style.display='none';document.getElementById('vista-admin').style.display='block';}else{document.getElementById('vista-chofer').style.display='none';document.getElementById('vista-admin').style.display='none';document.getElementById('vista-cliente').style.display='block';}}})();
