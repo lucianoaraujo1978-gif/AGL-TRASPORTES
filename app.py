@@ -104,7 +104,29 @@ function elegirRol(r){
 }
 function cambiarRol(){if(clienteWatch) navigator.geolocation.clearWatch(clienteWatch);localStorage.removeItem('rol_AGL');location.reload();}
 function volverAlInicio(){localStorage.removeItem('rol_AGL');document.getElementById('vista-cliente').style.display='none';document.getElementById('vista-chofer').style.display='none';document.getElementById('vista-admin').style.display='none';document.getElementById('modal-rol').style.display='flex';}
-(function(){let r=(localStorage.getItem('rol_AGL')||'').toLowerCase();if(r){document.getElementById('modal-rol').style.display='none';if(r==='chofer'){document.getElementById('vista-cliente').style.display='none';document.getElementById('vista-chofer').style.display='block';verificarSesionChofer();}else if(r==='admin'){document.getElementById('vista-cliente').style.display='none';document.getElementById('vista-chofer').style.display='none';document.getElementById('vista-admin').style.display='block';}else{document.getElementById('vista-chofer').style.display='none';document.getElementById('vista-admin').style.display='none';document.getElementById('vista-cliente').style.display='block';initMap();setTimeout(()=>{if(map) map.invalidateSize();},600);verificarSesionCliente();}}})();
+(function(){
+  if(window.location.href.includes('reset=1')){
+    localStorage.clear();
+    return;
+  }
+  let r=(localStorage.getItem('rol_AGL')||'').toLowerCase();
+  if(!r) return;
+  // NO entrar auto a cliente, solo a chofer y admin
+  if(r==='chofer'){
+    document.getElementById('modal-rol').style.display='none';
+    document.getElementById('vista-cliente').style.display='none';
+    document.getElementById('vista-chofer').style.display='block';
+    verificarSesionChofer();
+  }else if(r==='admin'){
+    document.getElementById('modal-rol').style.display='none';
+    document.getElementById('vista-cliente').style.display='none';
+    document.getElementById('vista-chofer').style.display='none';
+    document.getElementById('vista-admin').style.display='block';
+  }else{
+    // Cliente - siempre mostrar el modal de roles primero, no entrar directo
+    document.getElementById('modal-rol').style.display='flex';
+  }
+})();
 const verdeIcon=new L.Icon({iconUrl:'https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@master/img/marker-icon-2x-green.png',shadowUrl:'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',iconSize:[25,41],iconAnchor:[12,41]});
 const rojoIcon=new L.Icon({iconUrl:'https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@master/img/marker-icon-2x-red.png',shadowUrl:'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',iconSize:[25,41],iconAnchor:[12,41]});
 const amarilloIcon=new L.Icon({iconUrl:'https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@master/img/marker-icon-2x-yellow.png',shadowUrl:'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',iconSize:[25,41],iconAnchor:[12,41]});
@@ -132,7 +154,27 @@ function mostrarRegistroCli(){document.getElementById('form-login-c').style.disp
 function mostrarLoginCli(){document.getElementById('form-registro-c').style.display='none';document.getElementById('form-login-c').style.display='block';}
 async function clienteRegistrar(){let n=document.getElementById('cli-reg-nombre').value.trim(),t=document.getElementById('cli-reg-tel').value.trim(),c=document.getElementById('cli-reg-pass').value.trim();if(!n||!t||!c){alert('Llena todo');return;}let res=await fetch('/api/cliente/registrar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nombre:n,tel:t,pass:c})});let d=await res.json();if(!d.ok){alert(d.error);return;}localStorage.setItem('clienteActual',JSON.stringify(d.cliente));verificarSesionCliente();}
 async function clienteLogin(){let t=document.getElementById('cli-tel').value.trim(),c=document.getElementById('cli-pass').value.trim();let res=await fetch('/api/cliente/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tel:t,pass:c})});let d=await res.json();if(!d.ok){alert(d.error);return;}localStorage.setItem('clienteActual',JSON.stringify(d.cliente));verificarSesionCliente();}
-function verificarSesionCliente(){initMap();let a=JSON.parse(localStorage.getItem('clienteActual')||'null');if(a){document.getElementById('box-login-cliente').style.display='none';document.getElementById('box-cliente-viaje').style.display='block';setTimeout(()=>{if(map) map.invalidateSize();},400);iniciarSeguimientoCliente();}else{document.getElementById('box-login-cliente').style.display='block';document.getElementById('box-cliente-viaje').style.display='none';}}
+// Si viene ?reset=1 en la URL, borra TODO
+if(window.location.href.includes('reset=1')){
+  localStorage.clear();
+  localStorage.removeItem('clienteActual');
+  localStorage.removeItem('choferActual');
+  localStorage.removeItem('rol_AGL');
+}
+
+function verificarSesionCliente(){
+  initMap();
+  // FORZAR LOGIN SIEMPRE - aunque tenga cuenta guardada
+  document.getElementById('box-login-cliente').style.display='block';
+  document.getElementById('box-cliente-viaje').style.display='none';
+  document.getElementById('form-login-c').style.display='block';
+  document.getElementById('form-registro-c').style.display='none';
+  let a=JSON.parse(localStorage.getItem('clienteActual')||'null');
+  if(a && a.tel){
+    document.getElementById('cli-tel').value=a.tel;
+  }
+  setTimeout(()=>{ if(map) map.invalidateSize(); },500);
+}
 function iniciarGPSChofer(){if(!navigator.geolocation) return;clienteWatch=navigator.geolocation.watchPosition(pos=>{fetch('/api/chofer/ubicacion',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tel:miChofer.tel,lat:pos.coords.latitude,lng:pos.coords.longitude,timestamp:new Date().toISOString()})});document.getElementById('gps-status').innerText='● GPS '+pos.coords.latitude.toFixed(3);},{},{enableHighAccuracy:true});}
 function iniciarSeguimientoCliente(){setInterval(async()=>{let ca=JSON.parse(localStorage.getItem('clienteActual')||'null');if(!ca) return;let res=await fetch('/api/viajes/cliente/'+ca.tel);let vs=await res.json();let activo=vs.find(v=>v.status==='tomado'||v.status==='en_curso');if(activo&&activo.chofer_tel){let r2=await fetch('/api/chofer/ubicacion/'+activo.chofer_tel);let ub=await r2.json();if(ub.ok){if(!choferMarker)choferMarker=L.marker([ub.lat,ub.lng],{icon:flechaIcon}).addTo(map);else choferMarker.setLatLng([ub.lat,ub.lng]);document.getElementById('eta-box').style.display='block';document.getElementById('eta-box').innerText='🚗 '+activo.operador+' en camino';document.getElementById('txt-chofer').innerText=activo.operador;}}},5000);}
 function mostrarViajesChofer(filtro){let ch=JSON.parse(localStorage.getItem('choferActual')||'null');fetch('/api/viajes').then(r=>r.json()).then(v=>{let lista=document.getElementById('lista-viajes-chofer');let fil=v;if(filtro==='pendientes')fil=v.filter(x=>x.status==='pendiente');if(filtro==='mios')fil=v.filter(x=>x.chofer_tel===ch.tel&&(x.status==='tomado'||x.status==='en_curso'));if(filtro==='completados')fil=v.filter(x=>x.chofer_tel===ch.tel&&x.status==='completado');if(fil.length==0){lista.innerHTML='<div style="padding:30px;text-align:center;color:#888">No hay en '+filtro+'</div>';return;}lista.innerHTML=fil.slice().reverse().map(x=>`<div style="border:2px solid #00c853;border-radius:12px;padding:10px;margin:8px 0;background:#fff"><b>${x.cliente} $${x.precio} ${x.kms}km</b><br>${x.origen.substring(0,50)}<br>→ ${x.destino.substring(0,50)}<br><small>${x.fecha} ${x.hora} ${x.status}</small><br>${x.status==='pendiente'?`<button onclick="tomarViaje('${x.id}')" style="background:#00c853;color:#fff;border:none;padding:8px 12px;border-radius:8px;margin-top:6px">✅ TOMAR</button>`:''}${x.status==='tomado'?`<button onclick="iniciarViaje('${x.id}')" style="background:#000;color:#fff;border:none;padding:8px 12px;border-radius:8px;margin-top:6px">▶ INICIANDO</button>`:''}${x.status==='en_curso'?`<button onclick="finalizarViaje('${x.id}')" style="background:#d32f2f;color:#fff;border:none;padding:8px 12px;border-radius:8px;margin-top:6px">⏹ FINALIZAR</button>`:''}</div>`).join('');});}
