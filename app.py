@@ -1,5 +1,5 @@
 from flask import Flask, render_template_string, request, jsonify, send_file
-import json, io, csv, os, math
+import json, io, csv, os, math, time
 
 app = Flask(__name__)
 ADMIN_PASSWORD = "AGL2026"
@@ -144,7 +144,24 @@ def index(): return render_template_string(HTML)
 
 @app.route("/api/viaje", methods=["POST"])
 def api_viaje():
-    data=request.json; viajes.append(data); guardar(); return jsonify({"ok":True})
+    data=request.json
+    # V41.4 - BUSCA CHOFER MAS CERCANO Y RESERVA 20s
+    nearest_tel=None
+    nearest_dist=9999
+    lat_o=data.get('origen_lat')
+    lng_o=data.get('origen_lng')
+    if lat_o and lng_o:
+        for tel, pos in ubicaciones.items():
+            try:
+                d=haversine(lat_o, lng_o, pos['lat'], pos['lng'])
+                if d<nearest_dist:
+                    nearest_dist=d
+                    nearest_tel=tel
+            except: pass
+    data['chofer_cercano']=nearest_tel
+    data['reserva_hasta']=time.time()+20 if nearest_tel else 0
+    data['dist_cercano']=nearest_dist if nearest_tel else 0
+    viajes.append(data); guardar(); return jsonify({"ok":True, "chofer_cercano":nearest_tel})
 
 @app.route("/api/viajes_cercanos")
 def viajes_cercanos():
@@ -202,8 +219,14 @@ def cli_login():
 @app.route("/api/viaje/tomar", methods=["POST"])
 def tomar():
     d=request.json
+    now=time.time()
     for v in viajes:
         if v['id']==d['id'] and v['status']=='pendiente':
+            reserva_hasta=v.get('reserva_hasta',0)
+            chofer_cercano=v.get('chofer_cercano')
+            if reserva_hasta>now and chofer_cercano and d['chofer_tel']!=chofer_cercano:
+                restante=int(reserva_hasta-now)
+                return jsonify({"ok":False,"error":f"⏳ Reservado para chofer más cercano {chofer_cercano} - te quedan {restante}s. Distancia: {v.get('dist_cercano',0):.2f}km"})
             v['status']='tomado'; v['operador']=d['chofer_nombre']; v['chofer_tel']=d['chofer_tel']; guardar(); return jsonify({"ok":True})
     return jsonify({"ok":False,"error":"Ya tomado por otro chofer"})
 
