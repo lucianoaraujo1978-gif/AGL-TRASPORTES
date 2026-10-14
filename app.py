@@ -6,27 +6,27 @@ ADMIN_PASSWORD = "AGL2026"
 viajes, choferes_db, clientes_db, bloqueados, ubicaciones = [], [], [], [], {}
 
 def cargar():
-    global viajes, choferes_db, clientes_db, bloqueados, ubicaciones
-    try:
-        if os.path.exists("/tmp/viajes.json"):
-            with open("/tmp/viajes.json") as f: viajes.extend(json.load(f))
-        if os.path.exists("/tmp/choferes_db.json"):
-            with open("/tmp/choferes_db.json") as f: choferes_db.extend(json.load(f))
-        if os.path.exists("/tmp/clientes_db.json"):
-            with open("/tmp/clientes_db.json") as f: clientes_db.extend(json.load(f))
-        if os.path.exists("/tmp/bloqueados.json"):
-            with open("/tmp/bloqueados.json") as f: bloqueados.extend(json.load(f))
-        if os.path.exists("/tmp/ubicaciones.json"):
-            with open("/tmp/ubicaciones.json") as f: ubicaciones.update(json.load(f))
-    except: pass
+  global viajes, choferes_db, clientes_db, bloqueados, ubicaciones
+  try:
+    if os.path.exists("viajes.json"):
+      with open("viajes.json") as f: viajes.extend(json.load(f))
+    if os.path.exists("choferes_db.json"):
+      with open("choferes_db.json") as f: choferes_db.extend(json.load(f))
+    if os.path.exists("clientes_db.json"):
+      with open("clientes_db.json") as f: clientes_db.extend(json.load(f))
+    if os.path.exists("bloqueados.json"):
+      with open("bloqueados.json") as f: bloqueados.extend(json.load(f))
+    if os.path.exists("ubicaciones.json"):
+      with open("ubicaciones.json") as f: ubicaciones.update(json.load(f))
+  except: pass
 def guardar():
-    try:
-        with open("/tmp/viajes.json","w") as f: json.dump(viajes,f)
-        with open("/tmp/choferes_db.json","w") as f: json.dump(choferes_db,f)
-        with open("/tmp/clientes_db.json","w") as f: json.dump(clientes_db,f)
-        with open("/tmp/bloqueados.json","w") as f: json.dump(bloqueados,f)
-        with open("/tmp/ubicaciones.json","w") as f: json.dump(ubicaciones,f)
-    except: pass
+  try:
+    with open("viajes.json","w") as f: json.dump(viajes,f)
+    with open("choferes_db.json","w") as f: json.dump(choferes_db,f)
+    with open("clientes_db.json","w") as f: json.dump(clientes_db,f)
+    with open("bloqueados.json","w") as f: json.dump(bloqueados,f)
+    with open("ubicaciones.json","w") as f: json.dump(ubicaciones,f)
+  except: pass
 cargar() 
 def haversine(lat1,lon1,lat2,lon2):
     R=6371; dLat=math.radians(lat2-lat1); dLon=math.radians(lon2-lon1)
