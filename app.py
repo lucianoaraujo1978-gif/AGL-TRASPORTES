@@ -107,9 +107,9 @@ async function trazar(){
     document.getElementById('dist').innerText=kmActual+' km - '+tiempoActual+' min';
     document.getElementById('precio').innerText='$'+precioActual+' MXN';
     document.getElementById('btnPedir').innerText='Confirmar $'+precioActual;
+    document.getElementById('btnPedir').style.display="block";
     map.fitBounds(routeLine.getBounds(),{padding:[60,60]});
 }
-
 async function pedir(){if(!precioActual||!origenLatLng) return alert('Toca mapa origen y destino');let ca=JSON.parse(localStorage.getItem('clienteActual')||'null');let id='V'+Date.now();let data={id:id,cliente:ca?ca.nombre:'Cliente',cliente_tel:ca?ca.tel:'',operador:'Por asignar',chofer_tel:'',fecha:new Date().toISOString().split('T')[0],hora:new Date().toLocaleTimeString().slice(0,5),origen:document.getElementById('origen').value,destino:document.getElementById('destino').value,origen_lat:origenLatLng.lat,origen_lng:origenLatLng.lng,destino_lat:destinoLatLng?destinoLatLng.lat:0,destino_lng:destinoLatLng?destinoLatLng.lng:0,kms:kmActual,precio:precioActual,tiempo:tiempoActual,status:'pendiente',timestamp:new Date().toISOString()};await fetch('/api/viaje',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});alert('✅ Viaje solicitado - Buscando chofer más cercano');borrarTodo();}
 
 function borrarTodo(){
@@ -119,13 +119,17 @@ function borrarTodo(){
     document.getElementById('parada2').value="";
     document.getElementById('parada3').value="";
     document.getElementById('cotizacion').style.display="none";
+    document.getElementById('dist').innerText="";
+    document.getElementById('precio').innerText="$0";
+    document.getElementById('btnPedir').innerText="Confirmar $0";
+    document.getElementById('btnPedir').style.display="none";
     if(origenMarker){map.removeLayer(origenMarker);origenMarker=null;}
     if(destinoMarker){map.removeLayer(destinoMarker);destinoMarker=null;}
     if(parada1Marker){map.removeLayer(parada1Marker);parada1Marker=null;}
     if(parada2Marker){map.removeLayer(parada2Marker);parada2Marker=null;}
     if(parada3Marker){map.removeLayer(parada3Marker);parada3Marker=null;}
     if(routeLine){map.removeLayer(routeLine);routeLine=null;}
-    precioActual=0;origenLatLng=null;destinoLatLng=null;
+    precioActual=0; kmActual=0; origenLatLng=null; destinoLatLng=null;
     numParadasVisibles=0;
     document.getElementById('boxP1').style.display='none';
     document.getElementById('boxP2').style.display='none';
