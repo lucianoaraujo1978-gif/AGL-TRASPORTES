@@ -81,9 +81,57 @@ function crearParada2(ll){if(parada2Marker)map.removeLayer(parada2Marker);parada
 function crearParada3(ll){if(parada3Marker)map.removeLayer(parada3Marker);parada3Marker=L.marker(ll,{draggable:true,icon:L.icon({iconUrl:'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',shadowUrl:'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',iconSize:[25,41],iconAnchor:[12,41]})}).addTo(map);parada3Marker.on('dragend',function(ev){trazar();let nl=ev.target.getLatLng();fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${nl.lat}&lon=${nl.lng}&zoom=18`).then(r=>r.json()).then(j=>{document.getElementById('parada3').value=j.display_name.split(',').slice(0,3).join(', ');});});fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${ll.lat}&lon=${ll.lng}&zoom=18`).then(r=>r.json()).then(j=>{document.getElementById('parada3').value=j.display_name.split(',').slice(0,3).join(', ');});trazar();}
 function agregarParada(){if(numParadasVisibles>=3){alert('Máximo 3 paradas');return;}numParadasVisibles++;document.getElementById('boxP'+numParadasVisibles).style.display='flex';document.getElementById('txt-paradas').innerText=numParadasVisibles+' / 3';toggleMenu();}
 function miUbicacion(){navigator.geolocation.getCurrentPosition(p=>{let ll={lat:p.coords.latitude,lng:p.coords.longitude};miPos=ll;crearOrigen(ll);if(map) map.setView([ll.lat,ll.lng],16);});}
-async function trazar(){if(!origenMarker||!destinoMarker) return;let pts=[origenMarker.getLatLng()];if(parada1Marker) pts.push(parada1Marker.getLatLng());if(parada2Marker) pts.push(parada2Marker.getLatLng());if(parada3Marker) pts.push(parada3Marker.getLatLng());pts.push(destinoMarker.getLatLng());let s=pts.map(p=>p.lng+','+p.lat).join(';');let r=await fetch(`https://router.project-osrm.org/route/v1/driving/${s}?overview=full&geometries=geojson`);let j=await r.json();if(!j.routes[0])return;let route=j.routes[0];kmActual=Math.round(route.distance/100)/10;if(kmActual<0.8)kmActual=0.8;tiempoActual=Math.round(route.duration/60);if(routeLine)map.removeLayer(routeLine);routeLine=L.polyline(route.geometry.coordinates.map(c=>[c[1],c[0]]),{color:'#000',weight:6}).addTo(map);precioActual=Math.round(35+(kmActual*6.6)+tiempoActual);if(precioActual<65)precioActual=65;document.getElementById('cotizacion').style.display='block';document.getElementById('dist').innerText=kmActual+' km - '+tiempoActual+' min';document.getElementById('precio').innerText='$'+precioActual+' MXN';document.getElementById('btnPedir').innerText='Confirmar $'+precioActual;map.fitBounds(routeLine.getBounds(),{padding:[60,60]});}
+
+async function trazar(){
+    if(!origenMarker) return;
+    let pts=[];
+    pts.push(origenMarker.getLatLng());
+    if(parada1Marker) pts.push(parada1Marker.getLatLng());
+    if(parada2Marker) pts.push(parada2Marker.getLatLng());
+    if(parada3Marker) pts.push(parada3Marker.getLatLng());
+    if(destinoMarker) pts.push(destinoMarker.getLatLng());
+    if(pts.length < 2) return;
+    let s=pts.map(p=>p.lng+','+p.lat).join(';');
+    let r=await fetch(`https://router.project-osrm.org/route/v1/driving/${s}?overview=full&geometries=geojson`);
+    let j=await r.json();
+    if(!j.routes[0]) return;
+    let route=j.routes[0];
+    kmActual=Math.round(route.distance/100)/10;
+    if(kmActual<0.8)kmActual=0.8;
+    tiempoActual=Math.round(route.duration/60);
+    if(routeLine)map.removeLayer(routeLine);
+    routeLine=L.polyline(route.geometry.coordinates.map(c=>[c[1],c[0]]),{color:'#000',weight:6}).addTo(map);
+    precioActual=Math.round(35+(kmActual*6.6)+tiempoActual);
+    if(precioActual<65)precioActual=65;
+    document.getElementById('cotizacion').style.display='block';
+    document.getElementById('dist').innerText=kmActual+' km - '+tiempoActual+' min';
+    document.getElementById('precio').innerText='$'+precioActual+' MXN';
+    document.getElementById('btnPedir').innerText='Confirmar $'+precioActual;
+    map.fitBounds(routeLine.getBounds(),{padding:[60,60]});
+}
+
 async function pedir(){if(!precioActual||!origenLatLng) return alert('Toca mapa origen y destino');let ca=JSON.parse(localStorage.getItem('clienteActual')||'null');let id='V'+Date.now();let data={id:id,cliente:ca?ca.nombre:'Cliente',cliente_tel:ca?ca.tel:'',operador:'Por asignar',chofer_tel:'',fecha:new Date().toISOString().split('T')[0],hora:new Date().toLocaleTimeString().slice(0,5),origen:document.getElementById('origen').value,destino:document.getElementById('destino').value,origen_lat:origenLatLng.lat,origen_lng:origenLatLng.lng,destino_lat:destinoLatLng?destinoLatLng.lat:0,destino_lng:destinoLatLng?destinoLatLng.lng:0,kms:kmActual,precio:precioActual,tiempo:tiempoActual,status:'pendiente',timestamp:new Date().toISOString()};await fetch('/api/viaje',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});alert('✅ Viaje solicitado - Buscando chofer más cercano');borrarTodo();}
-function borrarTodo(){document.getElementById('origen').value="";document.getElementById('destino').value="";document.getElementById('cotizacion').style.display="none";if(origenMarker){map.removeLayer(origenMarker);origenMarker=null;}if(destinoMarker){map.removeLayer(destinoMarker);destinoMarker=null;}if(routeLine){map.removeLayer(routeLine);routeLine=null;}precioActual=0;origenLatLng=null;destinoLatLng=null;}
+
+function borrarTodo(){
+    document.getElementById('origen').value="";
+    document.getElementById('destino').value="";
+    document.getElementById('parada1').value="";
+    document.getElementById('parada2').value="";
+    document.getElementById('parada3').value="";
+    document.getElementById('cotizacion').style.display="none";
+    if(origenMarker){map.removeLayer(origenMarker);origenMarker=null;}
+    if(destinoMarker){map.removeLayer(destinoMarker);destinoMarker=null;}
+    if(parada1Marker){map.removeLayer(parada1Marker);parada1Marker=null;}
+    if(parada2Marker){map.removeLayer(parada2Marker);parada2Marker=null;}
+    if(parada3Marker){map.removeLayer(parada3Marker);parada3Marker=null;}
+    if(routeLine){map.removeLayer(routeLine);routeLine=null;}
+    precioActual=0;origenLatLng=null;destinoLatLng=null;
+    numParadasVisibles=0;
+    document.getElementById('boxP1').style.display='none';
+    document.getElementById('boxP2').style.display='none';
+    document.getElementById('boxP3').style.display='none';
+    document.getElementById('txt-paradas').innerText='0 / 3';
+}
 function mostrarRegistroChofer(){document.getElementById('form-login').style.display='none';document.getElementById('form-registro').style.display='block';}
 function mostrarLoginChofer(){document.getElementById('form-registro').style.display='none';document.getElementById('form-login').style.display='block';}
 async function choferRegistrar(){let n=document.getElementById('reg-nombre').value.trim(),t=document.getElementById('reg-tel').value.trim(),p=document.getElementById('reg-placas').value.trim(),modelo=document.getElementById('reg-modelo').value.trim(),anio=parseInt(document.getElementById('reg-anio').value),lic=document.getElementById('reg-licencia').value.trim(),vig=document.getElementById('reg-vigencia').value,c=document.getElementById('reg-pass').value.trim();if(!n||!t||!p||!modelo||!anio||!lic||!vig||!c){alert('Llena todo');return;}let res=await fetch('/api/chofer/registrar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nombre:n,tel:t,placas:p,modelo:modelo,anio:anio,licencia:lic,vigencia:vig,pass:c})});let d=await res.json();if(!d.ok){alert(d.error);return;}localStorage.setItem('choferActual',JSON.stringify(d.chofer));verificarSesionChofer();}
