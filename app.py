@@ -201,8 +201,25 @@ function mostrarRegistroCli(){document.getElementById('form-login-c').style.disp
 function mostrarLoginCli(){document.getElementById('form-registro-c').style.display='none';document.getElementById('form-login-c').style.display='block';}
 async function clienteRegistrar(){let n=document.getElementById('cli-reg-nombre').value.trim(),t=document.getElementById('cli-reg-tel').value.trim(),c=document.getElementById('cli-reg-pass').value.trim();if(!n||!t||!c){alert('Llena todo');return;}let res=await fetch('/api/cliente/registrar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nombre:n,tel:t,pass:c})});let d=await res.json();if(!d.ok){alert(d.error);return;}localStorage.setItem('clienteActual',JSON.stringify(d.cliente));alert('✅ Cuenta creada');mostrarLoginCli();}
 async function clienteLogin(){let t=document.getElementById('cli-tel').value.trim(),c=document.getElementById('cli-pass').value.trim();let res=await fetch('/api/cliente/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tel:t,pass:c})});let d=await res.json();if(!d.ok){document.getElementById('msg-cli').innerText=d.error;return;}localStorage.setItem('clienteActual',JSON.stringify(d.cliente));verificarSesionClienteLogged();}
-function verificarSesionCliente(){initMap();document.getElementById('box-login-cliente').style.display='block';document.getElementById('box-cliente-viaje').style.display='none';}
-function verificarSesionClienteLogged(){initMap();document.getElementById('box-login-cliente').style.display='none';document.getElementById('box-cliente-viaje').style.display='block';setTimeout(()=>{if(map) map.invalidateSize();},400);}
+function verificarSesionCliente(){
+  let ca=JSON.parse(localStorage.getItem('clienteActual')||'null');
+  initMap();
+  if(ca){
+    // SI HAY CLAVE GUARDADA, ENTRA DIRECTO AL MAPA
+    document.getElementById('box-login-cliente').style.display='none';
+    document.getElementById('box-cliente-viaje').style.display='block';
+    setTimeout(()=>{if(map) map.invalidateSize();},400);
+  }else{
+    document.getElementById('box-login-cliente').style.display='block';
+    document.getElementById('box-cliente-viaje').style.display='none';
+  }
+}
+function verificarSesionClienteLogged(){ 
+  initMap();
+  document.getElementById('box-login-cliente').style.display='none';
+  document.getElementById('box-cliente-viaje').style.display='block';
+  setTimeout(()=>{if(map) map.invalidateSize();},400);
+}
 function mostrarViajesChofer(filtro){
  let ch=JSON.parse(localStorage.getItem('choferActual')||'null'); if(!ch) return;
  fetch('/api/viajes_cercanos?chofer_tel='+ch.tel+'&lat='+miPos.lat+'&lng='+miPos.lng).then(r=>r.json()).then(data=>{
@@ -222,7 +239,34 @@ async function finalizarViaje(id){await fetch('/api/viaje/finalizar',{method:'PO
 async function adminLogin(){let p=document.getElementById('admin-pass-input').value;let res=await fetch('/api/admin/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:p})});let d=await res.json();if(!d.ok){alert(d.error);return;}localStorage.setItem('adminToken',p);document.getElementById('admin-login').style.display='none';document.getElementById('admin-panel').style.display='block';cargarAdmin();}
 async function cargarAdmin(){let pass=localStorage.getItem('adminToken');let res=await fetch('/api/admin/data',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pass})});let d=await res.json();document.getElementById('admin-stats').innerHTML=`<div style="background:white;padding:12px;border-radius:12px;text-align:center"><b>${d.choferes.length}</b><br>Choferes</div><div style="background:white;padding:12px;border-radius:12px;text-align:center"><b>${d.viajes.length}</b><br>Viajes</div>`;document.getElementById('admin-viajes').innerHTML=d.viajes.slice().reverse().map(v=>`<div style="border-bottom:1px solid #eee;padding:6px">${v.fecha} ${v.cliente} $${v.precio} - ${v.origen}</div>`).join('');}
 function enviarRating(){let c=document.getElementById('comentario-rating').value;fetch('/api/viaje/rating',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:ratingId,rating:5,comentario:c})});document.getElementById('modal-rating').style.display='none';}
-(function(){let r=localStorage.getItem('rol_AGL');if(r==='chofer'){document.getElementById('modal-rol').style.display='none';document.getElementById('vista-chofer').style.display='block';verificarSesionChofer();}else if(r==='admin'){document.getElementById('modal-rol').style.display='none';document.getElementById('vista-admin').style.display='block';}else if(r==='cliente'){document.getElementById('modal-rol').style.display='none';document.getElementById('vista-cliente').style.display='block';initMap();verificarSesionCliente();}})();
+(function(){
+  let r=localStorage.getItem('rol_AGL');
+  let ca=JSON.parse(localStorage.getItem('clienteActual')||'null');
+  let ch=JSON.parse(localStorage.getItem('choferActual')||'null');
+  let at=localStorage.getItem('adminToken');
+  
+  if(ch && (r==='chofer' || !r)){
+    document.getElementById('modal-rol').style.display='none';
+    document.getElementById('vista-chofer').style.display='block';
+    verificarSesionChofer();
+  }else if(at && r==='admin'){
+    document.getElementById('modal-rol').style.display='none';
+    document.getElementById('vista-admin').style.display='block';
+    document.getElementById('admin-login').style.display='none';
+    document.getElementById('admin-panel').style.display='block';
+    cargarAdmin();
+  }else if(ca){
+    // CLIENTE YA TIENE CLAVE GUARDADA - NO PIDE NADA
+    localStorage.setItem('rol_AGL','cliente');
+    document.getElementById('modal-rol').style.display='none';
+    document.getElementById('vista-cliente').style.display='block';
+    verificarSesionCliente();
+  }else if(r==='cliente'){
+    document.getElementById('modal-rol').style.display='none';
+    document.getElementById('vista-cliente').style.display='block';
+    verificarSesionCliente();
+  }
+})();
 </script></body></html>
 """
 
