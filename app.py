@@ -77,63 +77,85 @@ function getDir(ll,tipo){fetch(`https://nominatim.openstreetmap.org/reverse?form
 function crearOrigen(ll){origenLatLng=ll;if(!origenMarker){origenMarker=L.marker(ll,{draggable:true,icon:verdeIcon}).addTo(map);origenMarker.on('dragend',function(ev){origenLatLng=ev.target.getLatLng();trazar();});}else origenMarker.setLatLng(ll);getDir(ll,1);trazar();}
 function crearDestino(ll){destinoLatLng=ll;if(!destinoMarker){destinoMarker=L.marker(ll,{draggable:true,icon:rojoIcon}).addTo(map);destinoMarker.on('dragend',function(ev){destinoLatLng=ev.target.getLatLng();trazar();});}else destinoMarker.setLatLng(ll);getDir(ll,2);trazar();}
 function crearParada1(ll){
-  if(parada1Marker)map.removeLayer(parada1Marker);
-  parada1LatLng=ll;
-  parada1Marker=L.marker(ll,{
-    draggable:true,
-    icon:L.icon({
-      iconUrl:'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-yellow.png',
-      shadowUrl:'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-      iconSize:[25,41],
-      iconAnchor:[12,41]
+  if(parada1Marker) map.removeLayer(parada1Marker);
+  
+  parada1LatLng = ll;
+  
+  parada1Marker = L.marker(ll, {
+    draggable: true,
+    icon: L.icon({
+      iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-yellow.png',
+      shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+      iconSize: [25, 41],
+      iconAnchor: [12, 41],
+      popupAnchor: [1, -34],
+      shadowSize: [41, 41]
     })
   }).addTo(map);
-  parada1Marker.on('dragend',function(ev){
-    parada1LatLng=ev.target.getLatLng();
+
+  parada1Marker.on('dragend', function(ev){
+    parada1LatLng = ev.target.getLatLng();
     trazar();
-    let nl=parada1LatLng;
-    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${nl.lat}&lon=${nl.lng}&zoom=18`).then(r=>r.json()).then(j=>{
-      document.getElementById('parada1').value=j.display_name.split(',').slice(0,3).join(', ');
+    let nl = parada1LatLng;
+    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${nl.lat}&lon=${nl.lng}&zoom=18`)
+      .then(r => r.json())
+      .then(j => {
+        document.getElementById('parada1').value = j.display_name.split(',').slice(0,3).join(', ');
+      });
+  });
+
+  fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${ll.lat}&lon=${ll.lng}&zoom=18`)
+    .then(r => r.json())
+    .then(j => {
+      document.getElementById('parada1').value = j.display_name.split(',').slice(0,3).join(', ');
     });
-  });
-  fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${ll.lat}&lon=${ll.lng}&zoom=18`).then(r=>r.json()).then(j=>{
-    document.getElementById('parada1').value=j.display_name.split(',').slice(0,3).join(', ');
-  });
+
   trazar();
 }
 function crearParada2(ll){
-  if(parada2Marker)map.removeLayer(parada2Marker);
-  parada2LatLng=ll;
-  parada2Marker=L.marker(ll,{
-    draggable:true,
-    icon:L.icon({
-      iconUrl:'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-orange.png',
-      shadowUrl:'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-      iconSize:[25,41],
-      iconAnchor:[12,41]
+  if(parada2Marker) map.removeLayer(parada2Marker);
+  
+  parada2LatLng = ll;
+  
+  parada2Marker = L.marker(ll, {
+    draggable: true,
+    icon: L.icon({
+      iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
+      shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+      iconSize: [25, 41],
+      iconAnchor: [12, 41],
+      popupAnchor: [1, -34],
+      shadowSize: [41, 41]
     })
   }).addTo(map);
-  parada2Marker.on('dragend',function(ev){
-    parada2LatLng=ev.target.getLatLng();
+
+  parada2Marker.on('dragend', function(ev){
+    parada2LatLng = ev.target.getLatLng();
     trazar();
-    let nl=parada2LatLng;
-    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${nl.lat}&lon=${nl.lng}&zoom=18`).then(r=>r.json()).then(j=>{
-      document.getElementById('parada2').value=j.display_name.split(',').slice(0,3).join(', ');
+    let nl = parada2LatLng;
+    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${nl.lat}&lon=${nl.lng}&zoom=18`)
+      .then(r => r.json())
+      .then(j => {
+        document.getElementById('parada2').value = j.display_name.split(',').slice(0,3).join(', ');
+      });
+  });
+
+  fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${ll.lat}&lon=${ll.lng}&zoom=18`)
+    .then(r => r.json())
+    .then(j => {
+      document.getElementById('parada2').value = j.display_name.split(',').slice(0,3).join(', ');
     });
-  });
-  fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${ll.lat}&lon=${ll.lng}&zoom=18`).then(r=>r.json()).then(j=>{
-    document.getElementById('parada2').value=j.display_name.split(',').slice(0,3).join(', ');
-  });
+
   trazar();
 }
 function crearParada3(ll){
-  if(parada3Marker)map.removeLayer(parada3Marker);
+  if(parada3Marker) map.removeLayer(parada3Marker);
   parada3LatLng=ll;
   parada3Marker=L.marker(ll,{
     draggable:true,
     icon:L.icon({
-      iconUrl:'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
-      shadowUrl:'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+      iconUrl:'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+      shadowUrl:'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
       iconSize:[25,41],
       iconAnchor:[12,41]
     })
