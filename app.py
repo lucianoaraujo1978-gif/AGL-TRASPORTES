@@ -67,98 +67,71 @@ input{flex:1;border:none;outline:none;font-size:14px;font-weight:600;background:
 <script>
 let map=null,origenMarker=null,destinoMarker=null,parada1Marker=null,parada2Marker=null,parada3Marker=null,routeLine,choferMarker=null,kmActual=0,precioActual=0,tiempoActual=0,numParadasVisibles=0,adminToken=null,miChofer=null,clienteWatch=null,choferWatch=null,ratingId=null,ultimoPendientes=0,intervalChofer=null,miPos={lat:21.8853,lng:-102.2916},origenLatLng=null,destinoLatLng=null;
 function toggleMenu(){document.getElementById('menu').classList.toggle('act');document.getElementById('overlay').classList.toggle('act');}
-function initMap(){if(map){setTimeout(()=>map.invalidateSize(),200);return;}map=L.map('map',{zoomControl:false}).setView([21.8853,-102.2916],13);L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',{subdomains:['mt0','mt1','mt2','mt3'],maxZoom:20}).addTo(map);map.on('click',e=>{if(!origenMarker){crearOrigen(e.latlng);return;}if(numParadasVisibles>=1&&!parada1Marker){parada1Marker=L.marker(e.latlng,{icon:L.icon({iconUrl:'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-yellow.png',shadowUrl:'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',iconSize:[25,41],iconAnchor:[12,41]})}).addTo(map);fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${e.latlng.lat}&lon=${e.latlng.lng}&zoom=18`).then(r=>r.json()).then(j=>{document.getElementById('parada1').value=j.display_name.split(',').slice(0,3).join(', ');});trazar();return;}if(numParadasVisibles>=2&&!parada2Marker){parada2Marker=L.marker(e.latlng,{icon:L.icon({iconUrl:'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-orange.png',shadowUrl:'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',iconSize:[25,41],iconAnchor:[12,41]})}).addTo(map);fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${e.latlng.lat}&lon=${e.latlng.lng}&zoom=18`).then(r=>r.json()).then(j=>{document.getElementById('parada2').value=j.display_name.split(',').slice(0,3).join(', ');});trazar();return;}if(numParadasVisibles>=3&&!parada3Marker){parada3Marker=L.marker(e.latlng,{icon:L.icon({iconUrl:'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',shadowUrl:'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',iconSize:[25,41],iconAnchor:[12,41]})}).addTo(map);fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${e.latlng.lat}&lon=${e.latlng.lng}&zoom=18`).then(r=>r.json()).then(j=>{document.getElementById('parada3').value=j.display_name.split(',').slice(0,3).join(', ');});trazar();return;}if(!destinoMarker){crearDestino(e.latlng);return;}});}
-function elegirRol(r){localStorage.setItem('rol_AGL',r);document.getElementById('modal-rol').style.display='none';if(r==='chofer'){document.getElementById('vista-cliente').style.display='none';document.getElementById('vista-chofer').style.display='block';document.getElementById('vista-admin').style.display='none';verificarSesionChofer();}else if(r==='admin'){document.getElementById('vista-cliente').style.display='none';document.getElementById('vista-chofer').style.display='none';document.getElementById('vista-admin').style.display='block';}else{document.getElementById('vista-chofer').style.display='none';document.getElementById('vista-admin').style.display='none';document.getElementById('vista-cliente').style.display='block';initMap();verificarSesionCliente();}}
-function cambiarRol(){localStorage.removeItem('rol_AGL');location.reload();}
-function volverAlInicio(){localStorage.removeItem('rol_AGL');location.reload();}
-const verdeIcon=new L.Icon({iconUrl:'https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@master/img/marker-icon-2x-green.png',shadowUrl:'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',iconSize:[25,41],iconAnchor:[12,41]});
-const rojoIcon=new L.Icon({iconUrl:'https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@master/img/marker-icon-2x-red.png',shadowUrl:'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',iconSize:[25,41],iconAnchor:[12,41]});
-function getDir(ll,tipo){fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${ll.lat}&lon=${ll.lng}&zoom=18`).then(r=>r.json()).then(j=>{let nom=j.display_name.split(',').slice(0,3).join(', ');if(tipo==1)document.getElementById('origen').value=nom;else document.getElementById('destino').value=nom;});}
-function crearOrigen(ll){origenLatLng=ll;if(!origenMarker){origenMarker=L.marker(ll,{draggable:true,icon:verdeIcon}).addTo(map);origenMarker.on('dragend',function(ev){origenLatLng=ev.target.getLatLng();trazar();});}else origenMarker.setLatLng(ll);getDir(ll,1);trazar();}
-function crearDestino(ll){destinoLatLng=ll;if(!destinoMarker){destinoMarker=L.marker(ll,{draggable:true,icon:rojoIcon}).addTo(map);destinoMarker.on('dragend',function(ev){destinoLatLng=ev.target.getLatLng();trazar();});}else destinoMarker.setLatLng(ll);getDir(ll,2);trazar();}
-function crearParada2(ll){
-  parada2LatLng=ll;
-  if(!parada2Marker){
-    parada2Marker=L.marker(ll,{
-      draggable:true,
-      icon:L.icon({
-        iconUrl:'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-orange.png',
-        shadowUrl:'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-        iconSize:[25,41],
-        iconAnchor:[12,41]
-      })
-    }).addTo(map);
-    parada2Marker.on('dragend',function(ev){
-      parada2LatLng=ev.target.getLatLng();
-      trazar();
-      let nl=parada2LatLng;
-      fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${nl.lat}&lon=${nl.lng}&zoom=18`).then(r=>r.json()).then(j=>{
-        document.getElementById('parada2').value=j.display_name.split(',').slice(0,3).join(', ');
-      });
-    });
-  } else {
-    parada2Marker.setLatLng(ll);
-  }
-  fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${ll.lat}&lon=${ll.lng}&zoom=18`).then(r=>r.json()).then(j=>{
-    document.getElementById('parada2').value=j.display_name.split(',').slice(0,3).join(', ');
+function initMap(){
+  if(map){setTimeout(()=>map.invalidateSize(),200);return;}
+  map=L.map('map',{zoomControl:false}).setView([21.8853,-102.2916],13);
+  L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',{subdomains:['mt0','mt1','mt2','mt3'],maxZoom:20}).addTo(map);
+  map.on('click',e=>{
+    if(!origenMarker){crearOrigen(e.latlng);return;}
+    if(numParadasVisibles>=1&&!parada1Marker){crearParada1(e.latlng);return;}
+    if(numParadasVisibles>=2&&!parada2Marker){crearParada2(e.latlng);return;}
+    if(numParadasVisibles>=3&&!parada3Marker){crearParada3(e.latlng);return;}
+    if(!destinoMarker){crearDestino(e.latlng);return;}
   });
-  trazar();
+}
+
+const verdeIcon=new L.Icon({iconUrl:'https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@master/img/marker-icon-2x-green.png',shadowUrl:'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',iconSize:[35,55],iconAnchor:[17,55]});
+const rojoIcon=new L.Icon({iconUrl:'https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@master/img/marker-icon-2x-red.png',shadowUrl:'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',iconSize:[35,55],iconAnchor:[17,55]});
+
+function getDir(ll,tipo){fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${ll.lat}&lon=${ll.lng}&zoom=18`).then(r=>r.json()).then(j=>{let nom=j.display_name.split(',').slice(0,3).join(', ');if(tipo==1)document.getElementById('origen').value=nom;else document.getElementById('destino').value=nom;});}
+
+function makeDraggable(m, cb){
+  m.on('touchstart mousedown', ()=> map.dragging.disable());
+  m.on('dragend touchend', (ev)=>{
+    map.dragging.enable();
+    cb(ev.target.getLatLng());
+  });
+}
+
+function crearOrigen(ll){
+  origenLatLng=ll;
+  if(!origenMarker){
+    origenMarker=L.marker(ll,{draggable:true,autoPan:true,icon:verdeIcon}).addTo(map);
+    makeDraggable(origenMarker, (nl)=>{origenLatLng=nl; getDir(nl,1); trazar();});
+  }else origenMarker.setLatLng(ll);
+  getDir(ll,1);trazar();
+}
+function crearDestino(ll){
+  destinoLatLng=ll;
+  if(!destinoMarker){
+    destinoMarker=L.marker(ll,{draggable:true,autoPan:true,icon:rojoIcon}).addTo(map);
+    makeDraggable(destinoMarker, (nl)=>{destinoLatLng=nl; getDir(nl,2); trazar();});
+  }else destinoMarker.setLatLng(ll);
+  getDir(ll,2);trazar();
+}
+function crearParada1(ll){
+  parada1LatLng=ll;
+  if(!parada1Marker){
+    parada1Marker=L.marker(ll,{draggable:true,autoPan:true,icon:L.icon({iconUrl:'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-yellow.png',shadowUrl:'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',iconSize:[35,55],iconAnchor:[17,55]})}).addTo(map);
+    makeDraggable(parada1Marker, (nl)=>{parada1LatLng=nl; trazar(); fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${nl.lat}&lon=${nl.lng}&zoom=18`).then(r=>r.json()).then(j=>{document.getElementById('parada1').value=j.display_name.split(',').slice(0,3).join(', ');});});
+  }else parada1Marker.setLatLng(ll);
+  fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${ll.lat}&lon=${ll.lng}&zoom=18`).then(r=>r.json()).then(j=>{document.getElementById('parada1').value=j.display_name.split(',').slice(0,3).join(', ');});trazar();
 }
 function crearParada2(ll){
   parada2LatLng=ll;
   if(!parada2Marker){
-    parada2Marker=L.marker(ll,{
-      draggable:true,
-      icon:L.icon({
-        iconUrl:'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-orange.png',
-        shadowUrl:'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-        iconSize:[25,41],
-        iconAnchor:[12,41]
-      })
-    }).addTo(map);
-    parada2Marker.on('dragend',function(ev){
-      parada2LatLng=ev.target.getLatLng();
-      trazar();
-      let nl=parada2LatLng;
-      fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${nl.lat}&lon=${nl.lng}&zoom=18`).then(r=>r.json()).then(j=>{
-        document.getElementById('parada2').value=j.display_name.split(',').slice(0,3).join(', ');
-      });
-    });
-  } else {
-    parada2Marker.setLatLng(ll);
-  }
-  fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${ll.lat}&lon=${ll.lng}&zoom=18`).then(r=>r.json()).then(j=>{
-    document.getElementById('parada2').value=j.display_name.split(',').slice(0,3).join(', ');
-  });
-  trazar();
+    parada2Marker=L.marker(ll,{draggable:true,autoPan:true,icon:L.icon({iconUrl:'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-orange.png',shadowUrl:'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',iconSize:[35,55],iconAnchor:[17,55]})}).addTo(map);
+    makeDraggable(parada2Marker, (nl)=>{parada2LatLng=nl; trazar(); fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${nl.lat}&lon=${nl.lng}&zoom=18`).then(r=>r.json()).then(j=>{document.getElementById('parada2').value=j.display_name.split(',').slice(0,3).join(', ');});});
+  }else parada2Marker.setLatLng(ll);
+  fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${ll.lat}&lon=${ll.lng}&zoom=18`).then(r=>r.json()).then(j=>{document.getElementById('parada2').value=j.display_name.split(',').slice(0,3).join(', ');});trazar();
 }
 function crearParada3(ll){
   parada3LatLng=ll;
   if(!parada3Marker){
-    parada3Marker=L.marker(ll,{
-      draggable:true,
-      icon:L.icon({
-        iconUrl:'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
-        shadowUrl:'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-        iconSize:[25,41],
-        iconAnchor:[12,41]
-      })
-    }).addTo(map);
-    parada3Marker.on('dragend',function(ev){
-      parada3LatLng=ev.target.getLatLng();
-      trazar();
-      let nl=parada3LatLng;
-      fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${nl.lat}&lon=${nl.lng}&zoom=18`).then(r=>r.json()).then(j=>{
-        document.getElementById('parada3').value=j.display_name.split(',').slice(0,3).join(', ');
-      });
-    });
-  } else {
-    parada3Marker.setLatLng(ll);
-  }
-  fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${ll.lat}&lon=${ll.lng}&zoom=18`).then(r=>r.json()).then(j=>{
-    document.getElementById('parada3').value=j.display_name.split(',').slice(0,3).join(', ');
-  });
-  trazar();
+    parada3Marker=L.marker(ll,{draggable:true,autoPan:true,icon:L.icon({iconUrl:'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',shadowUrl:'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',iconSize:[35,55],iconAnchor:[17,55]})}).addTo(map);
+    makeDraggable(parada3Marker, (nl)=>{parada3LatLng=nl; trazar(); fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${nl.lat}&lon=${nl.lng}&zoom=18`).then(r=>r.json()).then(j=>{document.getElementById('parada3').value=j.display_name.split(',').slice(0,3).join(', ');});});
+  }else parada3Marker.setLatLng(ll);
+  fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${ll.lat}&lon=${ll.lng}&zoom=18`).then(r=>r.json()).then(j=>{document.getElementById('parada3').value=j.display_name.split(',').slice(0,3).join(', ');});trazar();
 }
 function agregarParada(){if(numParadasVisibles>=3){alert('Máximo 3 paradas');return;}numParadasVisibles++;document.getElementById('boxP'+numParadasVisibles).style.display='flex';document.getElementById('txt-paradas').innerText=numParadasVisibles+' / 3';toggleMenu();}
 function miUbicacion(){navigator.geolocation.getCurrentPosition(p=>{let ll={lat:p.coords.latitude,lng:p.coords.longitude};miPos=ll;crearOrigen(ll);if(map) map.setView([ll.lat,ll.lng],16);});}
