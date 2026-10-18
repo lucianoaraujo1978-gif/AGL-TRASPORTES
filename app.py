@@ -29,7 +29,7 @@ def haversine(lat1,lon1,lat2,lon2):
     return R*2*math.atan2(math.sqrt(a),math.sqrt(1-a))
 
 HTML = """<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>AGL V42 FINAL</title>
+<title>AGL V43 BANDERAZO 1KM</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
@@ -51,7 +51,7 @@ input{flex:1;border:none;outline:none;font-size:13px;font-weight:600;background:
 #modal-rol{position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.92);display:flex;align-items:center;justify-content:center;padding:20px}.box-rol{background:#fff;border-radius:20px;padding:24px;width:100%;max-width:360px;text-align:center}
 .inp{width:100%;padding:13px;margin:7px 0;border-radius:10px;border:1px solid #ddd;background:#f9f9f9}
 </style></head><body>
-<div id="modal-rol"><div class="box-rol"><h2>🚕 AGL Transporte</h2><p style="margin:8px 0 16px;color:#666;font-size:11px">V42 FINAL - TODO EN UNO</p>
+<div id="modal-rol"><div class="box-rol"><h2>🚕 AGL Transporte</h2><p style="margin:8px 0 16px;color:#666;font-size:11px">V43 - BANDERAZO 1KM + $10/KM</p>
 <button type="button" onclick="elegirRol('cliente')" style="width:100%;padding:16px;border:none;border-radius:14px;font-weight:800;margin-bottom:10px;background:#000;color:#fff">👤 SOY CLIENTE</button>
 <button type="button" onclick="elegirRol('chofer')" style="width:100%;padding:16px;border:none;border-radius:14px;font-weight:800;margin-bottom:10px;background:#00c853;color:#fff">🚗 SOY CHOFER</button>
 <button type="button" onclick="elegirRol('admin')" style="width:100%;padding:16px;border:none;border-radius:14px;font-weight:800;background:#0a3552;color:#fff">🔐 SOY ADMIN</button></div></div>
@@ -74,16 +74,16 @@ input{flex:1;border:none;outline:none;font-size:13px;font-weight:600;background:
   <div class="menu-linea" onclick="agregarParada()"><div><b>agregar parada</b><br><span id="txt-paradas">0 / 3</span></div><span>➕</span></div>
   <div class="menu-linea" onclick="borrarTodo()"><div><b>corregir orden</b></div><span>✏️</span></div>
   <div class="menu-linea" onclick="volverAlInicio()"><div><b>volver a menu inicial</b></div><span>🏠</span></div>
-  <div style="margin-top:20px"><button onclick="cerrarSesionTotal()" style="width:100%;background:#ffebee;color:#c62828;border:none;padding:12px;border-radius:10px;font-weight:700">Cerrar sesión y borrar clave</button></div>
+  <div style="margin-top:20px"><button onclick="cerrarSesionTotal()" style="width:100%;background:#ffebee;color:#c62828;border:none;padding:12px;border-radius:10px;font-weight:700">Cerrar sesión</button></div>
 </div></div><div class="overlay" id="overlay" onclick="toggleMenu()"></div>
 
 <div id="cotizacion"><div id="dist" style="font-size:13px;color:#333;font-weight:600"></div><b id="precio" style="font-size:26px;color:#000">$0 MXN</b></div>
 <button class="btn-confirm" id="btnPedir" onclick="pedir()">Confirmar Flete $0</button>
 </div></div>
 
-<div id="vista-chofer" style="display:none"><div id="box-login-chofer" style="padding:20px;max-width:400px;margin:20px auto;background:#fff;border-radius:16px"><h2 style="text-align:center">🚗 Chofer</h2><div id="form-login"><input id="chofer-tel" class="inp" placeholder="Celular"><input id="chofer-pass" class="inp" type="password" placeholder="Contraseña"><button onclick="choferLogin()" style="width:100%;padding:13px;background:#000;color:#fff;border:none;border-radius:10px">ENTRAR</button><button onclick="mostrarRegistroChofer()" style="width:100%;padding:11px;background:#fff;border:1px solid #000;border-radius:10px;margin-top:10px">REGISTRARME</button><button onclick="volverAlInicio()" style="width:100%;margin-top:10px;padding:11px;background:#eee;border:none;border-radius:10px">⬅ MENU</button><p id="msg-chofer" style="color:red;text-align:center;font-size:12px"></p></div><div id="form-registro" style="display:none"><input id="reg-nombre" class="inp" placeholder="Nombre"><input id="reg-tel" class="inp" placeholder="Celular"><input id="reg-placas" class="inp" placeholder="Placas"><input id="reg-modelo" class="inp" placeholder="Modelo"><input id="reg-anio" type="number" class="inp" placeholder="Año"><input id="reg-licencia" class="inp" placeholder="Licencia"><input id="reg-vigencia" type="date" class="inp"><input id="reg-pass" type="password" class="inp" placeholder="Contraseña"><button onclick="choferRegistrar()" style="width:100%;padding:13px;background:#00c853;color:#fff;border:none;border-radius:10px">CREAR CHOFER</button><button onclick="mostrarLoginChofer()" style="width:100%;padding:10px;background:none;border:none;color:#1976d2">Ya tengo cuenta</button></div></div><div id="box-viajes-chofer" style="display:none"><div style="background:#000;color:#fff;padding:12px;display:flex;justify-content:space-between"><span id="nombre-chofer-log">Chofer</span><span id="gps-status" style="font-size:10px;color:#00e676">● GPS</span><button onclick="choferLogout()" style="background:#ff5252;color:#fff;border:none;padding:6px 10px;border-radius:6px">Salir</button></div><div style="padding:10px"><div id="lista-viajes-chofer"></div></div></div></div>
+<div id="vista-chofer" style="display:none"><div id="box-login-chofer" style="padding:20px;max-width:400px;margin:20px auto;background:#fff;border-radius:16px"><h2 style="text-align:center">🚗 Chofer</h2><div id="form-login"><input id="chofer-tel" class="inp" placeholder="Celular"><input id="chofer-pass" class="inp" type="password" placeholder="Contraseña"><button onclick="choferLogin()" style="width:100%;padding:13px;background:#000;color:#fff;border:none;border-radius:10px">ENTRAR</button><button onclick="mostrarRegistroChofer()" style="width:100%;padding:11px;background:#fff;border:1px solid #000;border-radius:10px;margin-top:10px">REGISTRARME</button><button onclick="volverAlInicio()" style="width:100%;margin-top:10px;padding:11px;background:#eee;border:none;border-radius:10px">⬅ MENU</button><p id="msg-chofer" style="color:red;text-align:center;font-size:12px"></p></div><div id="form-registro" style="display:none"><input id="reg-nombre" class="inp" placeholder="Nombre"><input id="reg-tel" class="inp" placeholder="Celular"><input id="reg-pass" type="password" class="inp" placeholder="Contraseña"><button onclick="choferRegistrar()" style="width:100%;padding:13px;background:#00c853;color:#fff;border:none;border-radius:10px">CREAR CHOFER</button><button onclick="mostrarLoginChofer()" style="width:100%;padding:10px;background:none;border:none;color:#1976d2">Ya tengo cuenta</button></div></div><div id="box-viajes-chofer" style="display:none"><div style="background:#000;color:#fff;padding:12px;display:flex;justify-content:space-between"><span id="nombre-chofer-log">Chofer</span><button onclick="choferLogout()" style="background:#ff5252;color:#fff;border:none;padding:6px 10px;border-radius:6px">Salir</button></div><div style="padding:10px"><div id="lista-viajes-chofer"></div></div></div></div>
 
-<div id="vista-admin" style="display:none"><div id="admin-login" style="padding:20px;max-width:400px;margin:80px auto;background:#fff;border-radius:16px"><h2 style="text-align:center">🔐 ADMIN</h2><input id="admin-pass-input" type="password" class="inp" placeholder="AGL2026"><button onclick="adminLogin()" style="width:100%;padding:14px;background:#000;color:#fff;border:none;border-radius:10px">ENTRAR</button><button onclick="volverAlInicio()" style="width:100%;margin-top:10px;padding:12px;background:#eee;border:none;border-radius:12px">⬅ VOLVER</button></div><div id="admin-panel" style="display:none;padding:12px;background:#eef2f7;min-height:100vh"><h1>🔐 ADMIN V42</h1><div id="admin-stats"></div><div style="background:white;padding:12px;border-radius:12px;margin-top:10px"><h3>Viajes</h3><div id="admin-viajes"></div></div><button onclick="volverAlInicio()" style="margin-top:12px;padding:12px;width:100%;background:#000;color:#fff;border:none;border-radius:10px">Volver</button></div></div>
+<div id="vista-admin" style="display:none"><div id="admin-login" style="padding:20px;max-width:400px;margin:80px auto;background:#fff;border-radius:16px"><h2 style="text-align:center">🔐 ADMIN</h2><input id="admin-pass-input" type="password" class="inp" placeholder="AGL2026"><button onclick="adminLogin()" style="width:100%;padding:14px;background:#000;color:#fff;border:none;border-radius:10px">ENTRAR</button><button onclick="volverAlInicio()" style="width:100%;margin-top:10px;padding:12px;background:#eee;border:none;border-radius:12px">⬅ VOLVER</button></div><div id="admin-panel" style="display:none;padding:12px;background:#eef2f7;min-height:100vh"><h1>🔐 ADMIN V43</h1><div id="admin-viajes"></div><button onclick="volverAlInicio()" style="margin-top:12px;padding:12px;width:100%;background:#000;color:#fff;border:none;border-radius:10px">Volver</button></div></div>
 
 <script>
 let map=null,origenMarker=null,destinoMarker=null,parada1Marker=null,parada2Marker=null,parada3Marker=null,routeLine,kmActual=0,precioActual=0,tiempoActual=0,numParadasVisibles=0,miChofer=null,miPos={lat:21.8853,lng:-102.2916},origenLatLng=null,destinoLatLng=null;
@@ -127,13 +127,22 @@ function crearParada3(ll){if(!parada3Marker){parada3Marker=L.marker(ll,{draggabl
 function agregarParada(){if(numParadasVisibles>=3){alert('Máximo 3 paradas');return;}numParadasVisibles++;document.getElementById('boxP'+numParadasVisibles).style.display='flex';document.getElementById('txt-paradas').innerText=numParadasVisibles+' / 3';toggleMenu();}
 function miUbicacion(){navigator.geolocation.getCurrentPosition(p=>{let ll={lat:p.coords.latitude,lng:p.coords.longitude};miPos=ll;crearOrigen(ll);if(map) map.setView([ll.lat,ll.lng],16); ponerDireccion(ll.lat,ll.lng,'origen');});}
 function calcDist(lat1,lon1,lat2,lon2){let R=6371;let dLat=(lat2-lat1)*Math.PI/180;let dLon=(lon2-lon1)*Math.PI/180;let a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));}
+function calcularPrecio(km){
+    let arranque = 40;
+    let costoKm = 10;
+    let precio;
+    if(km <= 1){ precio = arranque; }
+    else { precio = Math.round(arranque + ((km - 1) * costoKm)); }
+    if(precio < 80) precio = 80;
+    return precio;
+}
 function trazarLocal(){
     if(!origenMarker) return; let pts=[]; pts.push(origenMarker.getLatLng());
     if(parada1Marker) pts.push(parada1Marker.getLatLng()); if(parada2Marker) pts.push(parada2Marker.getLatLng()); if(parada3Marker) pts.push(parada3Marker.getLatLng()); if(destinoMarker) pts.push(destinoMarker.getLatLng());
     if(pts.length<2) return;
     let dist=0; for(let i=0;i<pts.length-1;i++){dist+=calcDist(pts[i].lat,pts[i].lng,pts[i+1].lat,pts[i+1].lng);}
     kmActual=Math.round(dist*10)/10; if(kmActual<0.8)kmActual=0.8;
-    precioActual=Math.round(20+(kmActual*6)); if(precioActual<80)precioActual=80;
+    precioActual=calcularPrecio(kmActual);
     tiempoActual=Math.round(kmActual*3.2);
     document.getElementById('cotizacion').style.display='block';
     document.getElementById('dist').innerText=kmActual+' km - '+tiempoActual+' min para el cliente';
@@ -150,7 +159,7 @@ async function trazarRutaReal(pts){
       let route=j.routes[0];
       kmActual=Math.round(route.distance/100)/10; if(kmActual<0.8)kmActual=0.8;
       tiempoActual=Math.round(route.duration/60);
-      precioActual=Math.round(20+(kmActual*6)); if(precioActual<80)precioActual=80;
+      precioActual=calcularPrecio(kmActual);
       if(routeLine) map.removeLayer(routeLine);
       routeLine=L.polyline(route.geometry.coordinates.map(c=>[c[1],c[0]]),{color:'#276EF1',weight:6}).addTo(map);
       document.getElementById('dist').innerText=kmActual+' km - '+tiempoActual+' min para el cliente';
