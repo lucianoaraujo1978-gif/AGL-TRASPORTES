@@ -172,7 +172,7 @@ async function trazar(){
     if(kmActual<0.8)kmActual=0.8;
     tiempoActual=Math.round(route.duration/60);
     if(routeLine)map.removeLayer(routeLine);
-    routeLine=L.polyline(route.geometry.coordinates.map(c=>[c[1],c[0]]),{color:'#000',weight:6}).addTo(map);
+    routeLine=L.polyline(route.geometry.coordinates.map(c=>[c[1],c[0]]),{color:'#276EF1',weight:6}).addTo(map);
     precioActual=Math.round(20+(kmActual_6));
     if(precioActual<65)precioActual=65;
     document.getElementById('cotizacion').style.display='block';
