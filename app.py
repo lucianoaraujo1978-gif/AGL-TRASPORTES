@@ -7,11 +7,11 @@ def cargar():
   global viajes, choferes_db, clientes_db, ubicaciones
   try:
     if os.path.exists("viajes.json"):
-      with open("viajes.json") as f: viajes.extend(json.load(f))
+      with open("viajes.json") as f: viajes[:] = json.load(f))
     if os.path.exists("choferes_db.json"):
-      with open("choferes_db.json") as f: choferes_db.extend(json.load(f))
+      with open("choferes_db.json") as f: choferes_db[:] = json.load(f))
     if os.path.exists("clientes_db.json"):
-      with open("clientes_db.json") as f: clientes_db.extend(json.load(f))
+      with open("clientes_db.json") as f: clientes_db[:] = json.load(f))
     if os.path.exists("ubicaciones.json"):
       with open("ubicaciones.json") as f: ubicaciones.update(json.load(f))
   except: pass
@@ -21,7 +21,7 @@ def guardar():
     with open("choferes_db.json","w") as f: json.dump(choferes_db,f)
     with open("clientes_db.json","w") as f: json.dump(clientes_db,f)
     with open("ubicaciones.json","w") as f: json.dump(ubicaciones,f)
-  except: pass
+  except Exception as e: print("Error guardar:", e)
 cargar()
 def haversine(lat1,lon1,lat2,lon2):
     R=6371; dLat=math.radians(lat2-lat1); dLon=math.radians(lon2-lon1)
