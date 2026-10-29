@@ -7,11 +7,11 @@ def cargar():
   global viajes, choferes_db, clientes_db, ubicaciones
   try:
     if os.path.exists("viajes.json"):
-      with open("viajes.json") as f: viajes[:] = json.load(f))
+      with open("viajes.json") as f: viajes[:] = json.load(f)
     if os.path.exists("choferes_db.json"):
-      with open("choferes_db.json") as f: choferes_db[:] = json.load(f))
+      with open("choferes_db.json") as f: choferes_db[:] = json.load(f)
     if os.path.exists("clientes_db.json"):
-      with open("clientes_db.json") as f: clientes_db[:] = json.load(f))
+      with open("clientes_db.json") as f: clientes_db[:] = json.load(f)
     if os.path.exists("ubicaciones.json"):
       with open("ubicaciones.json") as f: ubicaciones.update(json.load(f))
   except: pass
@@ -19,7 +19,7 @@ def guardar():
   try:
     with open("viajes.json","w") as f: json.dump(viajes,f)
     with open("choferes_db.json","w") as f: json.dump(choferes_db,f)
-    with open("clientes_db.json","w") as f: json.dump(clientes_db,f)
+    with open("clientes_db.json","w") as f: json.dump(clientes_db,f)    
     with open("ubicaciones.json","w") as f: json.dump(ubicaciones,f)
   except Exception as e: print("Error guardar:", e)
 cargar()
@@ -83,7 +83,7 @@ input{flex:1;border:none;outline:none;font-size:13px;font-weight:600;background:
 
 <div id="vista-chofer" style="display:none"><div id="box-login-chofer" style="padding:20px;max-width:400px;margin:20px auto;background:#fff;border-radius:16px"><h2 style="text-align:center">🚗 Chofer</h2><div id="form-login"><input id="chofer-tel" class="inp" placeholder="Celular"><input id="chofer-pass" class="inp" type="password" placeholder="Contraseña"><button onclick="choferLogin()" style="width:100%;padding:13px;background:#000;color:#fff;border:none;border-radius:10px">ENTRAR</button><button onclick="mostrarRegistroChofer()" style="width:100%;padding:11px;background:#fff;border:1px solid #000;border-radius:10px;margin-top:10px">REGISTRARME</button><button onclick="volverAlInicio()" style="width:100%;margin-top:10px;padding:11px;background:#eee;border:none;border-radius:10px">⬅ MENU</button><p id="msg-chofer" style="color:red;text-align:center;font-size:12px"></p></div><div id="form-registro" style="display:none"><input id="reg-nombre" class="inp" placeholder="Nombre"><input id="reg-tel" class="inp" placeholder="Celular"><input id="reg-pass" type="password" class="inp" placeholder="Contraseña"><button onclick="choferRegistrar()" style="width:100%;padding:13px;background:#00c853;color:#fff;border:none;border-radius:10px">CREAR CHOFER</button><button onclick="mostrarLoginChofer()" style="width:100%;padding:10px;background:none;border:none;color:#1976d2">Ya tengo cuenta</button></div></div><div id="box-viajes-chofer" style="display:none"><div style="background:#000;color:#fff;padding:12px;display:flex;justify-content:space-between"><span id="nombre-chofer-log">Chofer</span><button onclick="choferLogout()" style="background:#ff5252;color:#fff;border:none;padding:6px 10px;border-radius:6px">Salir</button></div><div style="padding:10px"><div id="lista-viajes-chofer"></div></div></div></div>
 
-<div id="vista-admin" style="display:none"><div id="admin-login" style="padding:20px;max-width:400px;margin:80px auto;background:#fff;border-radius:16px"><h2 style="text-align:center">🔐 ADMIN</h2><input id="admin-pass-input" type="password" class="inp" placeholder="AGL2026"><button onclick="adminLogin()" style="width:100%;padding:14px;background:#000;color:#fff;border:none;border-radius:10px">ENTRAR</button><button onclick="volverAlInicio()" style="width:100%;margin-top:10px;padding:12px;background:#eee;border:none;border-radius:12px">⬅ VOLVER</button></div><div id="admin-panel" style="display:none;padding:12px;background:#eef2f7;min-height:100vh"><h1>🔐 ADMIN V43</h1><div id="admin-viajes"></div><button onclick="volverAlInicio()" style="margin-top:12px;padding:12px;width:100%;background:#000;color:#fff;border:none;border-radius:10px">Volver</button></div></div>
+<div id="vista-admin" style="display:none"><div id="admin-login" style="padding:20px;max-width:400px;margin:80px auto;background:#fff;border-radius:16px"><h2 style="text-align:center">🔐 ADMIN</h2><input id="admin-pass-input" type="password" class="inp" placeholder="AGL2026"><button onclick="adminLogin()" style="width:100%;padding:14px;background:#000;color:#fff;border:none;border-radius:10px">ENTRAR</button><button onclick="volverAlInicio()" style="width:100%;margin-top:10px;padding:12px;background:#eee;border:none;border-radius:12px">⬅ VOLVER</button></div><div id="admin-panel" style="display:none;padding:12px;background:#eef2f7;min-height:100vh"><h1>🔐 ADMIN V44</h1><div style="display:flex;gap:6px;margin:12px 0"><button onclick="adminTab('viajes')" id="btn-viajes" style="flex:1;padding:12px;background:#000;color:#fff;border:none;border-radius:10px;font-weight:800">Viajes</button><button onclick="adminTab('choferes')" id="btn-choferes" style="flex:1;padding:12px;background:#fff;border:1px solid #000;border-radius:10px;font-weight:800">Choferes</button><button onclick="adminTab('clientes')" id="btn-clientes" style="flex:1;padding:12px;background:#fff;border:1px solid #000;border-radius:10px;font-weight:800">Clientes</button></div><div id="admin-viajes"></div><div id="admin-choferes" style="display:none"></div><div id="admin-clientes" style="display:none"></div><button onclick="volverAlInicio()" style="margin-top:12px;padding:12px;width:100%;background:#000;color:#fff;border:none;border-radius:10px">Volver</button></div></div>
 
 <script>
 let map=null,origenMarker=null,destinoMarker=null,parada1Marker=null,parada2Marker=null,parada3Marker=null,routeLine,kmActual=0,precioActual=0,tiempoActual=0,numParadasVisibles=0,miChofer=null,miPos={lat:21.8853,lng:-102.2916},origenLatLng=null,destinoLatLng=null;
@@ -246,8 +246,26 @@ def tomar():
     return jsonify({"ok":False})
 @app.route("/api/admin/login", methods=["POST"])
 def admin_login(): return jsonify({"ok":True}) if request.json.get('password')==ADMIN_PASSWORD else jsonify({"ok":False,"error":"Pass mal"})
+
 @app.route("/api/admin/data", methods=["POST"])
 def admin_data():
     if request.json.get('password')!=ADMIN_PASSWORD: return jsonify({"ok":False})
-    return jsonify({"ok":True,"choferes":choferes_db,"viajes":viajes})
+    return jsonify({"ok":True,"choferes":choferes_db,"viajes":viajes, "clientes":clientes_db})
+
+@app.route("/api/admin/borrar", methods=["POST"])
+def admin_borrar():
+    data = request.json
+    if data.get('password')!=ADMIN_PASSWORD: return jsonify({"ok":False})
+    tipo = data.get('tipo')
+    tel = data.get('tel')
+    id_viaje = data.get('id')
+    if tipo == 'chofer':
+        choferes_db[:] = [c for c in choferes_db if c['tel'] != tel]
+    elif tipo == 'cliente':
+        clientes_db[:] = [c for c in clientes_db if c['tel'] != tel]
+    elif tipo == 'viaje':
+        viajes[:] = [v for v in viajes if v['id'] != id_viaje]
+    guardar()
+    return jsonify({"ok":True})
+
 if __name__=="__main__": app.run(host="0.0.0.0", port=int(os.environ.get("PORT",5000)))
