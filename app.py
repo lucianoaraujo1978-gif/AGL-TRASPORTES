@@ -263,7 +263,55 @@ async function clienteRegistrar(){let n=document.getElementById('cli-reg-nombre'
 async function clienteLogin(){let t=document.getElementById('cli-tel').value.trim(),c=document.getElementById('cli-pass').value.trim();let res=await fetch('/api/cliente/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tel:t,pass:c})});let d=await res.json();if(!d.ok){document.getElementById('msg-cli').innerText=d.error;return;}localStorage.setItem('clienteActual',JSON.stringify(d.cliente));verificarSesionClienteLogged();}
 function verificarSesionCliente(){let ca=JSON.parse(localStorage.getItem('clienteActual')||'null'); initMap(); if(ca){document.getElementById('box-login-cliente').style.display='none';document.getElementById('box-cliente-viaje').style.display='block';setTimeout(()=>{if(map) map.invalidateSize();},400);}else{document.getElementById('box-login-cliente').style.display='block';document.getElementById('box-cliente-viaje').style.display='none';}}
 function verificarSesionClienteLogged(){initMap();document.getElementById('box-login-cliente').style.display='none';document.getElementById('box-cliente-viaje').style.display='block';setTimeout(()=>{if(map) map.invalidateSize();},400);}
-async function tomarViaje(id){let ch=JSON.parse(localStorage.getItem('choferActual'));await fetch('/api/viaje/tomar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:id,chofer_tel:ch.tel,chofer_nombre:ch.nombre})});mostrarViajesChofer();}
+let viajeActivo = null;
+async function tomarViaje(id){
+  let ch=JSON.parse(localStorage.getItem('choferActual'));
+  let res=await fetch('/api/viaje/tomar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:id,chofer_tel:ch.tel,chofer_nombre:ch.nombre,chofer_placas:ch.placas||'',chofer_modelo:ch.modelo||''})});
+  let d=await res.json();
+  if(!d.ok) return alert('Ya lo tomó otro');
+  viajeActivo = d.viaje;
+  localStorage.setItem('viajeActivo', JSON.stringify(viajeActivo));
+  mostrarViajeActivo();
+}
+
+function mostrarViajeActivo(){
+  let v = viajeActivo || JSON.parse(localStorage.getItem('viajeActivo')||'null');
+  if(!v) return;
+  document.getElementById('lista-viajes-chofer').innerHTML = `
+    <div style="background:#000;color:#fff;padding:14px;border-radius:14px;margin-bottom:10px">
+      <b style="font-size:18px">✅ VIAJE TOMADO</b><br>
+      ${v.cliente} - ${v.cliente_tel}<br>
+      💰 $${v.precio} - ${v.kms}km<br>
+      📅 ${v.fecha} ${v.hora}
+    </div>
+    <div style="background:#fff;padding:12px;border-radius:12px;border:2px solid #000">
+      <b>ORIGEN:</b><br>${v.origen}<br><br>
+      <b>DESTINO:</b><br>${v.destino}<br><br>
+      <a href="https://www.google.com/maps/dir/?api=1&destination=${v.origen_lat},${v.origen_lng}" target="_blank" style="display:block;background:#276EF1;color:#fff;text-align:center;padding:14px;border-radius:10px;text-decoration:none;font-weight:800;margin-bottom:8px">📍 IR A ORIGEN - GOOGLE MAPS</a>
+      <a href="https://waze.com/ul?ll=${v.origen_lat},${v.origen_lng}&navigate=yes" target="_blank" style="display:block;background:#00c853;color:#fff;text-align:center;padding:14px;border-radius:10px;text-decoration:none;font-weight:800;margin-bottom:8px">🚗 ABRIR EN WAZE</a>
+      <a href="tel:${v.cliente_tel}" style="display:block;background:#fff;border:2px solid #000;color:#000;text-align:center;padding:14px;border-radius:10px;text-decoration:none;font-weight:800;margin-bottom:8px">📞 LLAMAR CLIENTE</a>
+      <a href="https://wa.me/52${v.cliente_tel}" target="_blank" style="display:block;background:#25D366;color:#fff;text-align:center;padding:14px;border-radius:10px;text-decoration:none;font-weight:800;margin-bottom:10px">💬 WHATSAPP CLIENTE</a>
+      <button onclick="finalizarViaje()" style="width:100%;background:#ff3b30;color:#fff;border:none;padding:14px;border-radius:10px;font-weight:800">🏁 FINALIZAR VIAJE</button>
+    </div>
+    <div id="map-chofer" style="height:300px;margin-top:10px;border-radius:14px"></div>
+  `;
+  setTimeout(()=>{
+    let mc = L.map('map-chofer').setView([v.origen_lat, v.origen_lng], 14);
+    L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',{subdomains:['mt0','mt1','mt2','mt3']}).addTo(mc);
+    L.marker([v.origen_lat, v.origen_lng], {icon: verdeIcon}).addTo(mc).bindPopup("ORIGEN").openPopup();
+    if(v.destino_lat) L.marker([v.destino_lat, v.destino_lng], {icon: rojoIcon}).addTo(mc).bindPopup("DESTINO");
+  }, 300);
+}
+
+function finalizarViaje(){
+  if(!confirm('¿Finalizar viaje?')) return;
+  let v = JSON.parse(localStorage.getItem('viajeActivo'));
+  fetch('/api/viaje/finalizar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:v.id})});
+  localStorage.removeItem('viajeActivo');
+  viajeActivo=null;
+  alert('✅ Viaje finalizado');
+  location.reload();
+}
 async function adminLogin(){let p=document.getElementById('admin-pass-input').value;let res=await fetch('/api/admin/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:p})});let d=await res.json();if(!d.ok){alert(d.error);return;}localStorage.setItem('adminToken',p);document.getElementById('admin-login').style.display='none';document.getElementById('admin-panel').style.display='block';cargarAdmin();}
 function adminTab(tab){
   document.getElementById('admin-viajes').style.display=tab==='viajes'?'block':'none';
@@ -339,11 +387,37 @@ def cli_reg():
 def cli_login():
     d=request.json; f=next((c for c in clientes_db if c['tel']==d['tel'] and c['pass']==d['pass']),None)
     return jsonify({"ok":True,"cliente":f}) if f else jsonify({"ok":False,"error":"Cel o pass mal"})
+
 @app.route("/api/viaje/tomar", methods=["POST"])
 def tomar():
+    data = request.json
     for v in viajes:
-        if v['id']==request.json['id']: v['status']='tomado'; guardar(); return jsonify({"ok":True})
+        if v['id']==data['id']: 
+            v['status']='tomado'
+            v['chofer_tel']=data.get('chofer_tel')
+            v['chofer_nombre']=data.get('chofer_nombre')
+            v['chofer_placas']=data.get('chofer_placas')
+            v['chofer_modelo']=data.get('chofer_modelo')
+            v['tomado_en']=time.strftime("%Y-%m-%d %H:%M:%S")
+            guardar()
+            try:
+                import requests
+                SHEET_URL = os.environ.get("SHEET_URL", "") 
+                if SHEET_URL:
+                    requests.post(SHEET_URL, json=v, timeout=3)
+            except: pass
+            return jsonify({"ok":True, "viaje":v})
     return jsonify({"ok":False})
+
+@app.route("/api/viaje/finalizar", methods=["POST"])
+def finalizar():
+    for v in viajes:
+        if v['id']==request.json['id']: 
+            v['status']='finalizado'
+            guardar()
+            return jsonify({"ok":True})
+    return jsonify({"ok":False})
+
 @app.route("/api/admin/login", methods=["POST"])
 def admin_login(): return jsonify({"ok":True}) if request.json.get('password')==ADMIN_PASSWORD else jsonify({"ok":False,"error":"Pass mal"})
 @app.route("/api/admin/data", methods=["POST"])
