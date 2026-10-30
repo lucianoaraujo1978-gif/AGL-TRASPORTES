@@ -253,7 +253,7 @@ function mostrarViajesChofer(){
       if(navigator.vibrate) navigator.vibrate([300,100,300]);
       setTimeout(()=>{ document.getElementById('alerta-radar').style.display='none'; }, 6000);
     }
-    lista.innerHTML=fil.map(x=>`<div style="border:2px solid #00c853;border-radius:12px;padding:12px;margin:8px 0;background:#f0fff4"><b>📍 A ${x.dist_km}km - $${x.precio}</b><br>${x.cliente} | ${x.kms}km<br>📅 ${x.fecha} ${x.hora}<br><span style="font-size:11px">${x.origen}<br>→ ${x.destino}</span><br><button onclick="tomarViaje('${x.id}')" style="background:#000;color:#fff;border:none;padding:12px;width:100%;border-radius:10px;margin-top:8px;font-weight:800">TOMAR $${x.precio}</button></div>`).join('')||'<div style="padding:30px;text-align:center;color:#888">🔍 Radar AGL activo<br>Buscando viajes en 4km...<br><br>Tu pos: '+miPos.lat.toFixed(4)+'</div>';
+    lista.innerHTML=fil.map(x=>`<div style="border:2px solid #00c853;border-radius:12px;padding:12px;margin:8px 0;background:#f0fff4"><b>📍 A ${x.dist_km}km - $${x.precio}</b><br>${x.cliente} | ${x.kms}km<br>📅 ${x.fecha} ${x.hora}<br><span style="font-size:11px">${x.origen}<br>→ ${x.destino}</span><br><button onclick="tomarViaje('${x.id}')" style="background:#000;color:#fff;border:none;padding:12px;width:100%;border-radius:10px;margin-top:8px;font-weight:800">TOMAR $${x.precio}</button></div>`).join('')||'<div style="padding:30px;text-align:center;color:#888">🔍 Radar AGL activo<br>Buscando viajes en 15km...<br><br>Tu pos: '+miPos.lat.toFixed(4)+'</div>';
   });
 }
 function choferLogout(){ if(radarInterval) clearInterval(radarInterval); localStorage.removeItem('choferActual'); location.reload(); }    
@@ -318,7 +318,7 @@ def viajes_cercanos():
         if v.get('status')!='pendiente': continue
         if not v.get('origen_lat'): continue
         d=haversine(lat,lng,v.get('origen_lat'),v.get('origen_lng'))
-        if d <= 4.0:
+        if d <= 15.0:
             vc=dict(v); vc['dist_km']=round(d,1); result.append(vc)
     return jsonify(sorted(result, key=lambda x: x['dist_km']))
 @app.route("/api/chofer/registrar", methods=["POST"])
