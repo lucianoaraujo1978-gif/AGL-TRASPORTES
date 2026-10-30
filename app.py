@@ -177,6 +177,7 @@ async function trazarRutaReal(pts){
       routeLine=L.polyline(pts,{color:'#276EF1',weight:6,dashArray:'8,8'}).addTo(map);
     }
 }
+let intervaloCliente = null;
 async function pedir(){
   if(!precioActual||!origenLatLng) return alert('Toca el mapa para origen y destino');
   let ca=JSON.parse(localStorage.getItem('clienteActual')||'null');
@@ -185,7 +186,39 @@ async function pedir(){
   let id='V'+Date.now();
   let data={id:id,cliente:ca?ca.nombre:'Cliente',cliente_tel:ca?ca.tel:'',fecha:fecha,hora:hora,origen:document.getElementById('origen').value,destino:document.getElementById('destino').value,origen_lat:origenLatLng.lat,origen_lng:origenLatLng.lng,destino_lat:destinoLatLng?destinoLatLng.lat:0,destino_lng:destinoLatLng?destinoLatLng.lng:0,kms:kmActual,precio:precioActual,status:'pendiente',timestamp:new Date().toISOString()};
   await fetch('/api/viaje',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
-  alert('✅ Flete CONFIRMADO '+fecha+' '+hora+' $'+precioActual+' - '+kmActual+'km'); borrarTodo();
+  localStorage.setItem('viajeActualId', id);
+  alert('✅ Flete CONFIRMADO '+fecha+' '+hora+' $'+precioActual);
+  // Ahora muestra seguimiento para cliente
+  if(intervaloCliente) clearInterval(intervaloCliente);
+  intervaloCliente = setInterval(()=>verEstadoMiViaje(id), 4000);
+  verEstadoMiViaje(id);
+}
+
+async function verEstadoMiViaje(id){
+  let r = await fetch('/api/viaje/estado/'+id);
+  let v = await r.json();
+  if(!v || !v.id) return;
+  if(v.status === 'pendiente'){
+    document.getElementById('cotizacion').innerHTML = `<b>🔍 BUSCANDO CHOFER...</b><br>${v.origen} → ${v.destino}<br>$${v.precio}`;
+    document.getElementById('cotizacion').style.display='block';
+  } else if(v.status === 'tomado' || v.status === 'en_curso'){
+    // ESTA ES LA TARJETA FIJA QUE NO SE BORRA
+    document.getElementById('cotizacion').innerHTML = `
+      <div style="background:#000;color:#fff;padding:12px;border-radius:12px">
+        <b style="color:#00e676">✅ CHOFER EN CAMINO</b><br>
+        <b>${v.chofer_nombre}</b><br>
+        🚗 ${v.chofer_modelo}<br>
+        🔖 PLACA: <b style="font-size:18px">${v.chofer_placas}</b><br>
+        <span style="font-size:12px">Llegando a tu origen...</span><br>
+        <a href="tel:${v.chofer_tel}" style="display:block;background:#fff;color:#000;padding:10px;border-radius:8px;margin-top:8px;text-decoration:none;font-weight:800">📞 LLAMAR CHOFER</a>
+      </div>`;
+    document.getElementById('cotizacion').style.display='block';
+  } else if(v.status === 'finalizado'){
+    clearInterval(intervaloCliente);
+    localStorage.removeItem('viajeActualId');
+    document.getElementById('cotizacion').innerHTML = `<b>✅ VIAJE FINALIZADO</b>`;
+    setTimeout(()=>borrarTodo(), 4000);
+  }
 }
 function borrarTodo(){document.getElementById('origen').value="";document.getElementById('destino').value="";document.getElementById('parada1').value="";document.getElementById('parada2').value="";document.getElementById('parada3').value="";document.getElementById('cotizacion').style.display="none";document.getElementById('btnPedir').style.display="none";if(origenMarker){map.removeLayer(origenMarker);origenMarker=null;}if(destinoMarker){map.removeLayer(destinoMarker);destinoMarker=null;}if(parada1Marker){map.removeLayer(parada1Marker);parada1Marker=null;}if(parada2Marker){map.removeLayer(parada2Marker);parada2Marker=null;}if(parada3Marker){map.removeLayer(parada3Marker);parada3Marker=null;}if(routeLine){map.removeLayer(routeLine);routeLine=null;}precioActual=0; kmActual=0; origenLatLng=null; destinoLatLng=null; numParadasVisibles=0;document.getElementById('boxP1').style.display='none';document.getElementById('boxP2').style.display='none';document.getElementById('boxP3').style.display='none';document.getElementById('txt-paradas').innerText='0 / 3';}
 function mostrarRegistroChofer(){document.getElementById('form-login').style.display='none';document.getElementById('form-registro').style.display='block';}
@@ -219,12 +252,18 @@ async function choferLogin(){let t=document.getElementById('chofer-tel').value.t
 let radarInterval=null, ultimoViajeId=null;
 function verificarSesionChofer(){
   let a=JSON.parse(localStorage.getItem('choferActual')||'null');
+  let va=JSON.parse(localStorage.getItem('viajeActivo')||'null');
   if(a){
     document.getElementById('box-login-chofer').style.display='none';
     document.getElementById('box-viajes-chofer').style.display='block';
     document.getElementById('nombre-chofer-log').innerText=a.nombre;
     miChofer=a;
-    iniciarRadarAGL();
+    if(va){
+      viajeActivo=va;
+      mostrarViajeActivo(); // si ya tiene viaje, NO inicie radar
+    } else {
+      iniciarRadarAGL();
+    }
   }else{
     document.getElementById('box-login-chofer').style.display='block';
     document.getElementById('box-viajes-chofer').style.display='none';
@@ -242,6 +281,10 @@ function iniciarRadarAGL(){
   mostrarViajesChofer();
 }
 function mostrarViajesChofer(){
+  let va = localStorage.getItem('viajeActivo');
+  if(va){ // si hay viaje activo, no sobreescribas
+    return;
+  }
   fetch('/api/viajes_cercanos?lat='+miPos.lat+'&lng='+miPos.lng).then(r=>r.json()).then(data=>{
     let lista=document.getElementById('lista-viajes-chofer');
     let fil=data.filter(x=>x.status==='pendiente');
@@ -262,7 +305,55 @@ function mostrarLoginCli(){document.getElementById('form-registro-c').style.disp
 async function clienteRegistrar(){let n=document.getElementById('cli-reg-nombre').value.trim(),t=document.getElementById('cli-reg-tel').value.trim(),p=document.getElementById('cli-reg-pass').value.trim();let res=await fetch('/api/cliente/registrar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nombre:n,tel:t,pass:p})});let d=await res.json();if(!d.ok){alert(d.error);return;}localStorage.setItem('clienteActual',JSON.stringify(d.cliente));verificarSesionClienteLogged();}
 async function clienteLogin(){let t=document.getElementById('cli-tel').value.trim(),c=document.getElementById('cli-pass').value.trim();let res=await fetch('/api/cliente/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tel:t,pass:c})});let d=await res.json();if(!d.ok){document.getElementById('msg-cli').innerText=d.error;return;}localStorage.setItem('clienteActual',JSON.stringify(d.cliente));verificarSesionClienteLogged();}
 function verificarSesionCliente(){let ca=JSON.parse(localStorage.getItem('clienteActual')||'null'); initMap(); if(ca){document.getElementById('box-login-cliente').style.display='none';document.getElementById('box-cliente-viaje').style.display='block';setTimeout(()=>{if(map) map.invalidateSize();},400);}else{document.getElementById('box-login-cliente').style.display='block';document.getElementById('box-cliente-viaje').style.display='none';}}
-function verificarSesionClienteLogged(){initMap();document.getElementById('box-login-cliente').style.display='none';document.getElementById('box-cliente-viaje').style.display='block';setTimeout(()=>{if(map) map.invalidateSize();},400);}
+let intervaloCliente = null;
+
+function verificarSesionClienteLogged(){
+  initMap();
+  document.getElementById('box-login-cliente').style.display='none';
+  document.getElementById('box-cliente-viaje').style.display='block';
+  setTimeout(()=>{if(map) map.invalidateSize();},400);
+
+  // --- AGREGA ESTO DESDE AQUÍ ---
+  let idGuardado = localStorage.getItem('viajeActualId');
+  if(idGuardado){
+    if(intervaloCliente) clearInterval(intervaloCliente);
+    intervaloCliente = setInterval(()=>verEstadoMiViaje(idGuardado), 4000);
+    verEstadoMiViaje(idGuardado);
+  }
+  // --- HASTA AQUÍ ---
+}
+
+// Y agrega también esta función nueva ABAJO de verificarSesionClienteLogged:
+
+async function verEstadoMiViaje(id){
+  try{
+    let r = await fetch('/api/viaje/estado/'+id);
+    let v = await r.json();
+    if(!v || !v.id) return;
+
+    let cot = document.getElementById('cotizacion');
+    cot.style.display='block';
+
+    if(v.status === 'pendiente'){
+      cot.innerHTML = `<b>🔍 BUSCANDO CHOFER...</b><br><span style="font-size:12px">${v.origen} → ${v.destino}</span><br>💰 $${v.precio}`;
+    } else if(v.status === 'tomado' || v.status === 'en_curso'){
+      // TARJETA FIJA QUE NO SE BORRA
+      cot.innerHTML = `
+        <div style="background:#000;color:#fff;padding:12px;border-radius:12px;text-align:left">
+          <b style="color:#00e676">✅ CHOFER EN CAMINO - NO SE BORRA</b><br>
+          <b>Chofer: ${v.chofer_nombre}</b><br>
+          🚗 ${v.chofer_modelo}<br>
+          🔖 PLACA: <b style="font-size:20px;letter-spacing:1px">${v.chofer_placas}</b><br>
+          <a href="tel:${v.chofer_tel}" style="display:block;background:#fff;color:#000;padding:10px;border-radius:8px;margin-top:8px;text-align:center;text-decoration:none;font-weight:800">📞 LLAMAR CHOFER ${v.chofer_tel}</a>
+        </div>`;
+    } else if(v.status === 'finalizado'){
+      clearInterval(intervaloCliente);
+      localStorage.removeItem('viajeActualId');
+      cot.innerHTML = `<b>✅ VIAJE FINALIZADO</b>`;
+      setTimeout(()=>{ cot.style.display='none'; }, 4000);
+    }
+  }catch(e){}
+}  
 let viajeActivo = null;
 async function tomarViaje(id){
   let ch=JSON.parse(localStorage.getItem('choferActual'));
@@ -309,6 +400,7 @@ function finalizarViaje(){
   fetch('/api/viaje/finalizar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:v.id})});
   localStorage.removeItem('viajeActivo');
   viajeActivo=null;
+  if(radarInterval) clearInterval(radarInterval);
   alert('✅ Viaje finalizado');
   location.reload();
 }
@@ -417,7 +509,18 @@ def finalizar():
             guardar()
             return jsonify({"ok":True})
     return jsonify({"ok":False})
+@app.route("/api/viaje/estado/<id_viaje>")
+def estado_viaje(id_viaje):
+    for v in viajes:
+        if v['id']==id_viaje:
+            return jsonify(v)
+    return jsonify({"ok":False})
 
+@app.route("/api/viajes_cliente")
+def viajes_cliente():
+    tel = request.args.get('tel')
+    result = [v for v in viajes if v.get('cliente_tel')==tel and v.get('status') in ['pendiente','tomado','en_curso']]
+    return jsonify(result)
 @app.route("/api/admin/login", methods=["POST"])
 def admin_login(): return jsonify({"ok":True}) if request.json.get('password')==ADMIN_PASSWORD else jsonify({"ok":False,"error":"Pass mal"})
 @app.route("/api/admin/data", methods=["POST"])
