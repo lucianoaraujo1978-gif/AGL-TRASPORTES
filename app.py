@@ -1,5 +1,5 @@
 from flask import Flask, render_template_string, request, jsonify
-import json, os, math
+import json, os, math, time
 app = Flask(__name__)
 ADMIN_PASSWORD = "AGL2026"
 viajes, choferes_db, clientes_db, ubicaciones = [], [], [], {}
@@ -17,7 +17,7 @@ def cargar():
   except: pass
 def guardar():
   try:
-    with open("viajes.json","w") as f: json.dump(viajes,f)
+    with open("viajes.json","w") as f: json.dump(viajes,f)  
     with open("choferes_db.json","w") as f: json.dump(choferes_db,f)
     with open("clientes_db.json","w") as f: json.dump(clientes_db,f)    
     with open("ubicaciones.json","w") as f: json.dump(ubicaciones,f)
@@ -33,6 +33,8 @@ HTML = """<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport"
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
+#alerta-radar{position:fixed;top:0;left:0;right:0;z-index:99999;background:#00c853;color:#fff;padding:16px;text-align:center;font-weight:900;display:none;font-size:15px;animation:parpadeo 1s infinite}
+@keyframes parpadeo{0%,100%{background:#00c853}50%{background:#009940}}
 *{box-sizing:border-box;margin:0;padding:0;font-family:Arial}body{height:100vh;overflow:hidden;background:#fff}
 #map{position:fixed!important;top:0;left:0;width:100%;height:100vh!important;z-index:1}
 .top-bar{position:fixed;top:12px;left:12px;right:12px;z-index:10;display:flex;gap:8px;max-width:420px}
@@ -186,8 +188,53 @@ function mostrarRegistroChofer(){document.getElementById('form-login').style.dis
 function mostrarLoginChofer(){document.getElementById('form-registro').style.display='none';document.getElementById('form-login').style.display='block';}
 async function choferRegistrar(){let n=document.getElementById('reg-nombre').value.trim(),t=document.getElementById('reg-tel').value.trim(),p=document.getElementById('reg-pass').value.trim();let res=await fetch('/api/chofer/registrar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nombre:n,tel:t,pass:p})});let d=await res.json();if(!d.ok){alert(d.error);return;}localStorage.setItem('choferActual',JSON.stringify(d.chofer));verificarSesionChofer();}
 async function choferLogin(){let t=document.getElementById('chofer-tel').value.trim(),c=document.getElementById('chofer-pass').value.trim();let res=await fetch('/api/chofer/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tel:t,pass:c})});let d=await res.json();if(!d.ok){document.getElementById('msg-chofer').innerText=d.error;return;}localStorage.setItem('choferActual',JSON.stringify(d.chofer));verificarSesionChofer();}
-function verificarSesionChofer(){let a=JSON.parse(localStorage.getItem('choferActual')||'null');if(a){document.getElementById('box-login-chofer').style.display='none';document.getElementById('box-viajes-chofer').style.display='block';document.getElementById('nombre-chofer-log').innerText=a.nombre;miChofer=a;mostrarViajesChofer('pendientes');}else{document.getElementById('box-login-chofer').style.display='block';document.getElementById('box-viajes-chofer').style.display='none';}}
-function choferLogout(){localStorage.removeItem('choferActual');verificarSesionChofer();}
+let radarInterval=null, ultimoViajeId=null;
+function verificarSesionChofer(){
+  let a=JSON.parse(localStorage.getItem('choferActual')||'null');
+  if(a){
+    document.getElementById('box-login-chofer').style.display='none';
+    document.getElementById('box-viajes-chofer').style.display='block';
+    document.getElementById('nombre-chofer-log').innerText=a.nombre;
+    miChofer=a;
+    iniciarRadarAGL();
+  }else{
+    document.getElementById('box-login-chofer').style.display='block';
+    document.getElementById('box-viajes-chofer').style.display='none';
+  }
+}
+
+function iniciarRadarAGL(){
+  if(navigator.geolocation){
+    navigator.geolocation.watchPosition(p=>{
+      miPos={lat:p.coords.latitude,lng:p.coords.longitude};
+      fetch('/api/chofer/heartbeat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tel:miChofer.tel,lat:miPos.lat,lng:miPos.lng})});
+    },null,{enableHighAccuracy:true});
+  }
+  if(radarInterval) clearInterval(radarInterval);
+  radarInterval=setInterval(()=>{ mostrarViajesChofer(); }, 3000);
+  mostrarViajesChofer();
+}
+
+function mostrarViajesChofer(){
+  fetch('/api/viajes_cercanos?lat='+miPos.lat+'&lng='+miPos.lng).then(r=>r.json()).then(data=>{
+    let lista=document.getElementById('lista-viajes-chofer');
+    let fil=data.filter(x=>x.status==='pendiente');
+    if(fil.length>0 && fil[0].id!==ultimoViajeId){
+      ultimoViajeId=fil[0].id;
+      document.getElementById('radar-txt').innerText=fil[0].dist_km+'km - $'+fil[0].precio;
+      document.getElementById('alerta-radar').style.display='block';
+      try{ document.getElementById('beep').play(); }catch(e){}
+      if(navigator.vibrate) navigator.vibrate([300,100,300]);
+      setTimeout(()=>{ document.getElementById('alerta-radar').style.display='none'; }, 6000);
+    }
+    lista.innerHTML=fil.map(x=>`<div style="border:2px solid #00c853;border-radius:12px;padding:12px;margin:8px 0;background:#f0fff4"><b>📍 A ${x.dist_km}km - $${x.precio}</b><br>${x.cliente} | ${x.kms}km<br>📅 ${x.fecha} ${x.hora}<br><span style="font-size:11px">${x.origen}<br>→ ${x.destino}</span><br><button onclick="tomarViaje('${x.id}')" style="background:#000;color:#fff;border:none;padding:12px;width:100%;border-radius:10px;margin-top:8px;font-weight:800">TOMAR $${x.precio}</button></div>`).join('')||'<div style="padding:30px;text-align:center;color:#888">🔍 Radar AGL activo<br>Buscando viajes en 4km...<br><br>Tu pos: '+miPos.lat.toFixed(4)+'</div>';
+  });
+}
+function choferLogout(){
+  if(radarInterval) clearInterval(radarInterval);
+  localStorage.removeItem('choferActual'); 
+  location.reload();
+}    
 function mostrarRegistroCli(){document.getElementById('form-login-c').style.display='none';document.getElementById('form-registro-c').style.display='block';}
 function mostrarLoginCli(){document.getElementById('form-registro-c').style.display='none';document.getElementById('form-login-c').style.display='block';}
 async function clienteRegistrar(){let n=document.getElementById('cli-reg-nombre').value.trim(),t=document.getElementById('cli-reg-tel').value.trim(),p=document.getElementById('cli-reg-pass').value.trim();let res=await fetch('/api/cliente/registrar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nombre:n,tel:t,pass:p})});let d=await res.json();if(!d.ok){alert(d.error);return;}localStorage.setItem('clienteActual',JSON.stringify(d.cliente));verificarSesionClienteLogged();}
@@ -212,15 +259,23 @@ def index(): return render_template_string(HTML)
 @app.route("/api/viaje", methods=["POST"])
 def api_viaje():
     data=request.json; viajes.append(data); guardar(); return jsonify({"ok":True})
+@app.route("/api/chofer/heartbeat", methods=["POST"])
+def heartbeat():
+    d=request.json
+    ubicaciones[d['tel']]={'lat':d['lat'],'lng':d['lng'],'ts':__import__('time').time()}
+    guardar()
+    return jsonify({"ok":True})
 @app.route("/api/viajes_cercanos")
 def viajes_cercanos():
     lat=float(request.args.get('lat',21.8853)); lng=float(request.args.get('lng',-102.2916))
     result=[]
     for v in viajes:
-        d=haversine(lat,lng,v.get('origen_lat',21.8853),v.get('origen_lng',-102.2916)) if v.get('origen_lat') else 99.0
-        vc=dict(v); vc['dist_km']=round(d,1); result.append(vc)
-    pendientes=sorted([x for x in result if x['status']=='pendiente'], key=lambda x: x['dist_km'])
-    return jsonify(pendientes)
+        if v.get('status')!='pendiente': continue
+        if not v.get('origen_lat'): continue
+        d=haversine(lat,lng,v.get('origen_lat'),v.get('origen_lng'))
+        if d <= 4.0:
+            vc=dict(v); vc['dist_km']=round(d,1); result.append(vc)
+    return jsonify(sorted(result, key=lambda x: x['dist_km']))
 @app.route("/api/chofer/registrar", methods=["POST"])
 def chofer_reg():
     d=request.json
