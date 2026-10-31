@@ -103,12 +103,14 @@ function initMap(){
   if(map){setTimeout(()=>map.invalidateSize(),200);return;}
   map=L.map('map',{zoomControl:false}).setView([21.8853,-102.2916],13);
   L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',{subdomains:['mt0','mt1','mt2','mt3'],maxZoom:20}).addTo(map);
-  map.on('click',e=>{
+   map.on('click',e=>{
     if(!origenMarker){crearOrigen(e.latlng);return;}
     if(numParadasVisibles>=1&&!parada1Marker){crearParada1(e.latlng);return;}
     if(numParadasVisibles>=2&&!parada2Marker){crearParada2(e.latlng);return;}
     if(numParadasVisibles>=3&&!parada3Marker){crearParada3(e.latlng);return;}
     if(!destinoMarker){crearDestino(e.latlng);return;}
+    // si ya hay todo, y quiere cambiar la ultima parada
+    if(numParadasVisibles==2 && parada2Marker){crearParada2(e.latlng);return;}
   });
   let hoy=new Date().toISOString().split('T')[0]; let now=new Date(); now.setMinutes(now.getMinutes()+30); let hora=now.toTimeString().slice(0,5);
   let f=document.getElementById('fecha'); if(f&&!f.value) f.value=hoy; let h=document.getElementById('hora'); if(h&&!h.value) h.value=hora;
@@ -135,7 +137,17 @@ function crearDestino(ll){destinoLatLng=ll; if(!destinoMarker){destinoMarker=L.m
 function crearParada1(ll){if(!parada1Marker){parada1Marker=L.marker(ll,{draggable:true,autoPan:true,icon:amarilloIcon}).addTo(map); makeDraggable(parada1Marker, (nl)=>{ponerDireccion(nl.lat,nl.lng,'parada1'); trazarLocal();});}else parada1Marker.setLatLng(ll); ponerDireccion(ll.lat,ll.lng,'parada1'); trazarLocal();}
 function crearParada2(ll){if(!parada2Marker){parada2Marker=L.marker(ll,{draggable:true,autoPan:true,icon:naranjaIcon}).addTo(map); makeDraggable(parada2Marker, (nl)=>{ponerDireccion(nl.lat,nl.lng,'parada2'); trazarLocal();});}else parada2Marker.setLatLng(ll); ponerDireccion(ll.lat,ll.lng,'parada2'); trazarLocal();}
 function crearParada3(ll){if(!parada3Marker){parada3Marker=L.marker(ll,{draggable:true,autoPan:true,icon:azulIcon}).addTo(map); makeDraggable(parada3Marker, (nl)=>{ponerDireccion(nl.lat,nl.lng,'parada3'); trazarLocal();});}else parada3Marker.setLatLng(ll); ponerDireccion(ll.lat,ll.lng,'parada3'); trazarLocal();}
-function agregarParada(){if(numParadasVisibles>=3){alert('Máximo 3 paradas');return;}numParadasVisibles++;document.getElementById('boxP'+numParadasVisibles).style.display='flex';document.getElementById('txt-paradas').innerText=numParadasVisibles+' / 3';toggleMenu();}
+function agregarParada(){
+  if(numParadasVisibles>=3){alert('Máximo 3 paradas');return;}
+  numParadasVisibles++;
+  for(let i=1;i<=numParadasVisibles;i++){
+    document.getElementById('boxP'+i).style.display='flex';
+  }
+  document.getElementById('txt-paradas').innerText=numParadasVisibles+' / 3';
+  toggleMenu();
+  // si ya tienes origen, avisa que toques el mapa
+  if(origenMarker) alert('Toca el mapa donde va la Parada '+numParadasVisibles);
+}
 function miUbicacion(){navigator.geolocation.getCurrentPosition(p=>{let ll={lat:p.coords.latitude,lng:p.coords.longitude};miPos=ll;crearOrigen(ll);if(map) map.setView([ll.lat,ll.lng],16); ponerDireccion(ll.lat,ll.lng,'origen');});}
 function calcDist(lat1,lon1,lat2,lon2){let R=6371;let dLat=(lat2-lat1)*Math.PI/180;let dLon=(lon2-lon1)*Math.PI/180;let a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));}
 function calcularPrecio(km){
