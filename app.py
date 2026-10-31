@@ -193,33 +193,6 @@ async function pedir(){
   intervaloCliente = setInterval(()=>verEstadoMiViaje(id), 4000);
   verEstadoMiViaje(id);
 }
-
-async function verEstadoMiViaje(id){
-  let r = await fetch('/api/viaje/estado/'+id);
-  let v = await r.json();
-  if(!v || !v.id) return;
-  if(v.status === 'pendiente'){
-    document.getElementById('cotizacion').innerHTML = `<b>🔍 BUSCANDO CHOFER...</b><br>${v.origen} → ${v.destino}<br>$${v.precio}`;
-    document.getElementById('cotizacion').style.display='block';
-  } else if(v.status === 'tomado' || v.status === 'en_curso'){
-    // ESTA ES LA TARJETA FIJA QUE NO SE BORRA
-    document.getElementById('cotizacion').innerHTML = `
-      <div style="background:#000;color:#fff;padding:12px;border-radius:12px">
-        <b style="color:#00e676">✅ CHOFER EN CAMINO</b><br>
-        <b>${v.chofer_nombre}</b><br>
-        🚗 ${v.chofer_modelo}<br>
-        🔖 PLACA: <b style="font-size:18px">${v.chofer_placas}</b><br>
-        <span style="font-size:12px">Llegando a tu origen...</span><br>
-        <a href="tel:${v.chofer_tel}" style="display:block;background:#fff;color:#000;padding:10px;border-radius:8px;margin-top:8px;text-decoration:none;font-weight:800">📞 LLAMAR CHOFER</a>
-      </div>`;
-    document.getElementById('cotizacion').style.display='block';
-  } else if(v.status === 'finalizado'){
-    clearInterval(intervaloCliente);
-    localStorage.removeItem('viajeActualId');
-    document.getElementById('cotizacion').innerHTML = `<b>✅ VIAJE FINALIZADO</b>`;
-    setTimeout(()=>borrarTodo(), 4000);
-  }
-}
 function borrarTodo(){document.getElementById('origen').value="";document.getElementById('destino').value="";document.getElementById('parada1').value="";document.getElementById('parada2').value="";document.getElementById('parada3').value="";document.getElementById('cotizacion').style.display="none";document.getElementById('btnPedir').style.display="none";if(origenMarker){map.removeLayer(origenMarker);origenMarker=null;}if(destinoMarker){map.removeLayer(destinoMarker);destinoMarker=null;}if(parada1Marker){map.removeLayer(parada1Marker);parada1Marker=null;}if(parada2Marker){map.removeLayer(parada2Marker);parada2Marker=null;}if(parada3Marker){map.removeLayer(parada3Marker);parada3Marker=null;}if(routeLine){map.removeLayer(routeLine);routeLine=null;}precioActual=0; kmActual=0; origenLatLng=null; destinoLatLng=null; numParadasVisibles=0;document.getElementById('boxP1').style.display='none';document.getElementById('boxP2').style.display='none';document.getElementById('boxP3').style.display='none';document.getElementById('txt-paradas').innerText='0 / 3';}
 function mostrarRegistroChofer(){document.getElementById('form-login').style.display='none';document.getElementById('form-registro').style.display='block';}
 function mostrarLoginChofer(){document.getElementById('form-registro').style.display='none';document.getElementById('form-login').style.display='block';}
@@ -305,8 +278,6 @@ function mostrarLoginCli(){document.getElementById('form-registro-c').style.disp
 async function clienteRegistrar(){let n=document.getElementById('cli-reg-nombre').value.trim(),t=document.getElementById('cli-reg-tel').value.trim(),p=document.getElementById('cli-reg-pass').value.trim();let res=await fetch('/api/cliente/registrar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nombre:n,tel:t,pass:p})});let d=await res.json();if(!d.ok){alert(d.error);return;}localStorage.setItem('clienteActual',JSON.stringify(d.cliente));verificarSesionClienteLogged();}
 async function clienteLogin(){let t=document.getElementById('cli-tel').value.trim(),c=document.getElementById('cli-pass').value.trim();let res=await fetch('/api/cliente/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tel:t,pass:c})});let d=await res.json();if(!d.ok){document.getElementById('msg-cli').innerText=d.error;return;}localStorage.setItem('clienteActual',JSON.stringify(d.cliente));verificarSesionClienteLogged();}
 function verificarSesionCliente(){let ca=JSON.parse(localStorage.getItem('clienteActual')||'null'); initMap(); if(ca){document.getElementById('box-login-cliente').style.display='none';document.getElementById('box-cliente-viaje').style.display='block';setTimeout(()=>{if(map) map.invalidateSize();},400);}else{document.getElementById('box-login-cliente').style.display='block';document.getElementById('box-cliente-viaje').style.display='none';}}
-let intervaloCliente = null;
-
 function verificarSesionClienteLogged(){
   initMap();
   document.getElementById('box-login-cliente').style.display='none';
