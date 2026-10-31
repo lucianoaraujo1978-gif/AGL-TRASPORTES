@@ -308,10 +308,10 @@ async function verEstadoMiViaje(id){
     if(v.status === 'pendiente'){
       cot.innerHTML = `<b>🔍 BUSCANDO CHOFER...</b><br><span style="font-size:12px">${v.origen} → ${v.destino}</span><br>💰 $${v.precio}`;
     } else if(v.status === 'tomado' || v.status === 'en_curso'){
-      // TARJETA FIJA QUE NO SE BORRA
+      // TARJETA FIJA 
       cot.innerHTML = `
         <div style="background:#000;color:#fff;padding:12px;border-radius:12px;text-align:left">
-          <b style="color:#00e676">✅ CHOFER EN CAMINO - NO SE BORRA</b><br>
+          <b style="color:#00e676">✅ CHOFER EN CAMINO </b><br>
           <b>Chofer: ${v.chofer_nombre}</b><br>
           🚗 ${v.chofer_modelo}<br>
           🔖 PLACA: <b style="font-size:20px;letter-spacing:1px">${v.chofer_placas}</b><br>
@@ -350,6 +350,7 @@ function mostrarViajeActivo(){
       <b>ORIGEN:</b><br>${v.origen}<br><br>
       <b>DESTINO:</b><br>${v.destino}<br><br>
       <a href="https://www.google.com/maps/dir/?api=1&destination=${v.origen_lat},${v.origen_lng}" target="_blank" style="display:block;background:#276EF1;color:#fff;text-align:center;padding:14px;border-radius:10px;text-decoration:none;font-weight:800;margin-bottom:8px">📍 IR A ORIGEN - GOOGLE MAPS</a>
+      <a href="https://www.google.com/maps/dir/?api=1&origin=${v.origen_lat},${v.origen_lng}&destination=${v.destino_lat},${v.destino_lng}" target="_blank" style="display:block;background:#000;color:#FFD700;border:2px solid #FFD700;text-align:center;padding:14px;border-radius:10px;text-decoration:none;font-weight:800;margin-bottom:8px">🗺️ VER RECORRIDO COMPLETO - ${v.kms}km</a>
       <a href="https://waze.com/ul?ll=${v.origen_lat},${v.origen_lng}&navigate=yes" target="_blank" style="display:block;background:#00c853;color:#fff;text-align:center;padding:14px;border-radius:10px;text-decoration:none;font-weight:800;margin-bottom:8px">🚗 ABRIR EN WAZE</a>
       <a href="tel:${v.cliente_tel}" style="display:block;background:#fff;border:2px solid #000;color:#000;text-align:center;padding:14px;border-radius:10px;text-decoration:none;font-weight:800;margin-bottom:8px">📞 LLAMAR CLIENTE</a>
       <a href="https://wa.me/52${v.cliente_tel}" target="_blank" style="display:block;background:#25D366;color:#fff;text-align:center;padding:14px;border-radius:10px;text-decoration:none;font-weight:800;margin-bottom:10px">💬 WHATSAPP CLIENTE</a>
