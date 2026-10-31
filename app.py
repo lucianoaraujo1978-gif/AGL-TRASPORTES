@@ -19,7 +19,6 @@ def cargar():
     if os.path.exists("ubicaciones.json"):
       with open("ubicaciones.json") as f: ubicaciones.update(json.load(f))
   except: pass
-
 def guardar():
   try:
     with open("viajes.json","w") as f: json.dump(viajes,f)  
@@ -27,16 +26,14 @@ def guardar():
     with open("clientes_db.json","w") as f: json.dump(clientes_db,f)    
     with open("ubicaciones.json","w") as f: json.dump(ubicaciones,f)
   except: pass
-
 cargar()
-
 def haversine(lat1,lon1,lat2,lon2):
     R=6371; dLat=math.radians(lat2-lat1); dLon=math.radians(lon2-lon1)
     a=math.sin(dLat/2)**2+math.cos(math.radians(lat1))*math.cos(math.radians(lat2))*math.sin(dLon/2)**2
     return R*2*math.atan2(math.sqrt(a),math.sqrt(1-a))
 
 HTML = """<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>AGL V46 FINAL</title>
+<title>AGL V48 RECORRIDO COMPLETO</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
@@ -53,32 +50,37 @@ input{flex:1;border:none;outline:none;font-size:13px;font-weight:600;background:
 #menu.act{left:0}.overlay{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:20;display:none}.overlay.act{display:block}
 .menu-header{padding:20px 16px 12px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center}
 .menu-body{padding:14px}.menu-linea{padding:14px 4px;font-size:16px;border-bottom:1px solid #f5f5f5;cursor:pointer;display:flex;justify-content:space-between}
-.parada-extra{display:none}
 #cotizacion{position:fixed;bottom:82px;left:12px;right:12px;z-index:11;background:#fff;border-radius:16px;padding:12px 16px;display:none;box-shadow:0 8px 28px rgba(0,0,0,.32);max-width:420px;margin:auto;text-align:center}
 .btn-confirm{position:fixed;bottom:12px;left:12px;right:12px;z-index:11;background:#000;color:#fff;font-weight:800;padding:16px;border:none;border-radius:16px;max-width:420px;margin:auto;display:none;font-size:15px}
 #modal-rol{position:fixed;inset:0;z-index:99999;background:#f6f7f9;display:flex;align-items:center;justify-content:center;padding:16px}.box-rol{background:#fff;border-radius:18px;padding:18px 16px;width:100%;max-width:320px;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.15)}
 .inp{width:100%;padding:13px;margin:7px 0;border-radius:10px;border:1px solid #ddd;background:#f9f9f9}
 </style></head><body>
 <div id="alerta-radar">🚨 VIAJE CERCA! <span id="radar-txt"></span></div>
-<div id="modal-rol"><div class="box-rol"><h2>🚕 AGL Transporte</h2><p style="margin:8px 0 14px;color:#666;font-size:11px">V46 - MIN 6 AÑOS + $40</p>
-<button type="button" onclick="elegirRol('cliente')" style="width:100%;padding:13px;border:none;border-radius:12px;font-weight:800;margin-bottom:8px;background:#000;color:#fff">👤 SOY CLIENTE</button>
-<button type="button" onclick="elegirRol('chofer')" style="width:100%;padding:13px;border:none;border-radius:12px;font-weight:800;margin-bottom:8px;background:#00c853;color:#fff">🚗 SOY CHOFER</button>
-<button type="button" onclick="elegirRol('admin')" style="width:100%;padding:13px;border:none;border-radius:12px;font-weight:800;background:#0a3552;color:#fff">🔐 SOY ADMIN</button></div></div>
+<div id="modal-rol"><div class="box-rol"><h2>🚕 AGL Transporte</h2><p style="margin:8px 0 14px;color:#666;font-size:11px">V48 - RECORRIDO COMPLETO CON PARADAS</p>
+<button onclick="elegirRol('cliente')" style="width:100%;padding:13px;border:none;border-radius:12px;font-weight:800;margin-bottom:8px;background:#000;color:#fff">👤 SOY CLIENTE</button>
+<button onclick="elegirRol('chofer')" style="width:100%;padding:13px;border:none;border-radius:12px;font-weight:800;margin-bottom:8px;background:#00c853;color:#fff">🚗 SOY CHOFER</button>
+<button onclick="elegirRol('admin')" style="width:100%;padding:13px;border:none;border-radius:12px;font-weight:800;background:#0a3552;color:#fff">🔐 SOY ADMIN</button></div></div>
 <div id="vista-cliente" style="display:none">
 <div id="box-login-cliente" style="padding:20px;max-width:400px;margin:70px auto 0;background:#fff;position:relative;z-index:20;border-radius:16px"><h2 style="text-align:center">👤 Cliente</h2><div id="form-login-c"><input id="cli-tel" class="inp" placeholder="Celular"><input id="cli-pass" class="inp" type="password" placeholder="Contraseña"><button onclick="clienteLogin()" style="width:100%;padding:13px;background:#000;color:#fff;border:none;border-radius:10px">ENTRAR</button><p style="text-align:center;margin:10px 0">¿Nuevo?</p><button onclick="mostrarRegistroCli()" style="width:100%;padding:11px;background:#fff;border:1px solid #000;border-radius:10px">REGISTRARME</button><button onclick="volverAlInicio()" style="width:100%;margin-top:10px;padding:11px;background:#eee;border:none;border-radius:10px">⬅ MENU</button><p id="msg-cli" style="color:red;text-align:center;font-size:12px"></p></div><div id="form-registro-c" style="display:none"><input id="cli-reg-nombre" class="inp" placeholder="Nombre"><input id="cli-reg-tel" class="inp" placeholder="Celular"><input id="cli-reg-pass" class="inp" type="password" placeholder="Contraseña"><button onclick="clienteRegistrar()" style="width:100%;padding:13px;background:#00c853;color:#fff;border:none;border-radius:10px">CREAR CUENTA</button><button onclick="mostrarLoginCli()" style="width:100%;padding:10px;background:none;border:none;color:#1976d2">Ya tengo cuenta</button></div></div>
 <div id="box-cliente-viaje" style="display:none"><div id="map"></div><button onclick="miUbicacion()" style="position:fixed;bottom:160px;right:14px;z-index:12;width:50px;height:50px;background:#fff;border:none;border-radius:50%;box-shadow:0 4px 18px rgba(0,0,0,.3)">📍</button>
-<div class="top-bar"><button class="menu-btn" onclick="toggleMenu()">☰</button><div class="search-card"><div class="item"><div class="dot o"></div><input id="origen" placeholder="Origen"></div><div class="item parada-extra" id="boxP1"><div class="dot" style="background:#ffcc00"></div><input id="parada1" placeholder="Parada 1"></div><div class="item parada-extra" id="boxP2"><div class="dot" style="background:#ff9500"></div><input id="parada2" placeholder="Parada 2"></div><div class="item parada-extra" id="boxP3"><div class="dot" style="background:#00e5ff"></div><input id="parada3" placeholder="Parada 3"></div><div class="item"><div class="dot d"></div><input id="destino" placeholder="Destino"></div></div></div>
+<div class="top-bar"><button class="menu-btn" onclick="toggleMenu()">☰</button><div class="search-card">
+<div class="item"><div class="dot o"></div><input id="origen" placeholder="Origen - toca el mapa"></div>
+<div class="item" id="boxP1" style="display:none"><div class="dot" style="background:#ffcc00"></div><input id="parada1" placeholder="Parada 1"><button onclick="quitarParada(1)" style="border:none;background:#eee;width:26px;height:26px;border-radius:50%">✕</button></div>
+<div class="item" id="boxP2" style="display:none"><div class="dot" style="background:#ff9500"></div><input id="parada2" placeholder="Parada 2"><button onclick="quitarParada(2)" style="border:none;background:#eee;width:26px;height:26px;border-radius:50%">✕</button></div>
+<div class="item" id="boxP3" style="display:none"><div class="dot" style="background:#00e5ff"></div><input id="parada3" placeholder="Parada 3"><button onclick="quitarParada(3)" style="border:none;background:#eee;width:26px;height:26px;border-radius:50%">✕</button></div>
+<div class="item"><div class="dot d"></div><input id="destino" placeholder="Destino - toca el mapa"></div>
+</div></div>
 <div id="menu"><div class="menu-header"><b>🚕 AGL AGS</b><button onclick="toggleMenu()" style="width:34px;height:34px;border-radius:50%;background:#111;color:#fff;border:none">✕</button></div>
 <div class="menu-body">
   <div style="background:#eef5ff;padding:14px;border-radius:14px;margin-bottom:14px;border:1px solid #b5d0ff">
-    <b style="font-size:14px">📅 Programar flete</b><br><span style="font-size:11px;color:#555">Fecha y hora</span>
+    <b style="font-size:14px">📅 Programar flete</b>
     <div style="display:flex;gap:8px;margin-top:10px">
       <input type="date" id="fecha" style="flex:1;padding:11px;border-radius:10px;border:1px solid #aaa;background:#fff;font-weight:700">
       <input type="time" id="hora" style="flex:1;padding:11px;border-radius:10px;border:1px solid #aaa;background:#fff;font-weight:700">
     </div>
   </div>
-  <div class="menu-linea" onclick="agregarParada()"><div><b>agregar parada</b><br><span id="txt-paradas">0 / 3</span></div><span>➕</span></div>
-  <div class="menu-linea" onclick="borrarTodo()"><div><b>corregir orden</b></div><span>✏️</span></div>
+  <div class="menu-linea" onclick="agregarParada()"><div><b>➕ agregar parada</b><br><span id="txt-paradas" style="font-size:12px;color:#666">0 / 3 paradas</span></div><span style="font-size:22px">➕</span></div>
+  <div class="menu-linea" onclick="borrarTodo()"><div><b>🧹 borrar todo</b></div><span>✏️</span></div>
   <div class="menu-linea" onclick="volverAlInicio()"><div><b>volver a menu inicial</b></div><span>🏠</span></div>
   <div style="margin-top:20px"><button onclick="cerrarSesionTotal()" style="width:100%;background:#ffebee;color:#c62828;border:none;padding:12px;border-radius:10px;font-weight:700">Cerrar sesión</button></div>
 </div></div><div class="overlay" id="overlay" onclick="toggleMenu()"></div>
@@ -89,13 +91,13 @@ input{flex:1;border:none;outline:none;font-size:13px;font-weight:600;background:
 <div id="form-registro" style="display:none">
 <input id="reg-nombre" class="inp" placeholder="Nombre completo">
 <input id="reg-tel" class="inp" placeholder="Celular">
-<input id="reg-placas" class="inp" placeholder="Placas - Ej: ABC-123-A" style="text-transform:uppercase">
+<input id="reg-placas" class="inp" placeholder="Placas" style="text-transform:uppercase">
 <input id="reg-modelo" class="inp" placeholder="Modelo con año - Ej: Versa 2022 blanco">
 <input id="reg-pass" type="password" class="inp" placeholder="Contraseña">
 <button onclick="choferRegistrar()" style="width:100%;padding:13px;background:#00c853;color:#fff;border:none;border-radius:10px">CREAR CHOFER</button>
 <button onclick="mostrarLoginChofer()" style="width:100%;padding:10px;background:none;border:none;color:#1976d2">Ya tengo cuenta</button>
 </div></div><div id="box-viajes-chofer" style="display:none"><div style="background:#000;color:#fff;padding:12px;display:flex;justify-content:space-between"><span id="nombre-chofer-log">Chofer</span><button onclick="choferLogout()" style="background:#ff5252;color:#fff;border:none;padding:6px 10px;border-radius:6px">Salir</button></div><div style="padding:10px"><div id="lista-viajes-chofer"></div></div></div></div>
-<div id="vista-admin" style="display:none"><div id="admin-login" style="padding:20px;max-width:400px;margin:80px auto;background:#fff;border-radius:16px"><h2 style="text-align:center">🔐 ADMIN</h2><input id="admin-pass-input" type="password" class="inp" placeholder="AGL2026"><button onclick="adminLogin()" style="width:100%;padding:14px;background:#000;color:#fff;border:none;border-radius:10px">ENTRAR</button><button onclick="volverAlInicio()" style="width:100%;margin-top:10px;padding:12px;background:#eee;border:none;border-radius:12px">⬅ VOLVER</button></div><div id="admin-panel" style="display:none;padding:12px;background:#eef2f7;min-height:100vh"><h1>🔐 ADMIN V46</h1><div style="display:flex;gap:6px;margin:12px 0"><button onclick="adminTab('viajes')" id="btn-viajes" style="flex:1;padding:12px;background:#000;color:#fff;border:none;border-radius:10px;font-weight:800">Viajes</button><button onclick="adminTab('choferes')" id="btn-choferes" style="flex:1;padding:12px;background:#fff;border:1px solid #000;border-radius:10px;font-weight:800">Choferes</button><button onclick="adminTab('clientes')" id="btn-clientes" style="flex:1;padding:12px;background:#fff;border:1px solid #000;border-radius:10px;font-weight:800">Clientes</button></div><div id="admin-viajes"></div><div id="admin-choferes" style="display:none"></div><div id="admin-clientes" style="display:none"></div><button onclick="volverAlInicio()" style="margin-top:12px;padding:12px;width:100%;background:#000;color:#fff;border:none;border-radius:10px">Volver</button></div></div>
+<div id="vista-admin" style="display:none"><div id="admin-login" style="padding:20px;max-width:400px;margin:80px auto;background:#fff;border-radius:16px"><h2 style="text-align:center">🔐 ADMIN</h2><input id="admin-pass-input" type="password" class="inp" placeholder="AGL2026"><button onclick="adminLogin()" style="width:100%;padding:14px;background:#000;color:#fff;border:none;border-radius:10px">ENTRAR</button><button onclick="volverAlInicio()" style="width:100%;margin-top:10px;padding:12px;background:#eee;border:none;border-radius:12px">⬅ VOLVER</button></div><div id="admin-panel" style="display:none;padding:12px;background:#eef2f7;min-height:100vh"><h1>🔐 ADMIN V48</h1><div style="display:flex;gap:6px;margin:12px 0"><button onclick="adminTab('viajes')" id="btn-viajes" style="flex:1;padding:12px;background:#000;color:#fff;border:none;border-radius:10px;font-weight:800">Viajes</button><button onclick="adminTab('choferes')" id="btn-choferes" style="flex:1;padding:12px;background:#fff;border:1px solid #000;border-radius:10px;font-weight:800">Choferes</button><button onclick="adminTab('clientes')" id="btn-clientes" style="flex:1;padding:12px;background:#fff;border:1px solid #000;border-radius:10px;font-weight:800">Clientes</button></div><div id="admin-viajes"></div><div id="admin-choferes" style="display:none"></div><div id="admin-clientes" style="display:none"></div><button onclick="volverAlInicio()" style="margin-top:12px;padding:12px;width:100%;background:#000;color:#fff;border:none;border-radius:10px">Volver</button></div></div>
 <script>
 let map=null,origenMarker=null,destinoMarker=null,parada1Marker=null,parada2Marker=null,parada3Marker=null,routeLine,kmActual=0,precioActual=0,tiempoActual=0,numParadasVisibles=0,miChofer=null,miPos={lat:21.8853,lng:-102.2916},origenLatLng=null,destinoLatLng=null;
 function toggleMenu(){document.getElementById('menu').classList.toggle('act');document.getElementById('overlay').classList.toggle('act');}
@@ -103,14 +105,12 @@ function initMap(){
   if(map){setTimeout(()=>map.invalidateSize(),200);return;}
   map=L.map('map',{zoomControl:false}).setView([21.8853,-102.2916],13);
   L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',{subdomains:['mt0','mt1','mt2','mt3'],maxZoom:20}).addTo(map);
-   map.on('click',e=>{
+  map.on('click',e=>{
     if(!origenMarker){crearOrigen(e.latlng);return;}
     if(numParadasVisibles>=1&&!parada1Marker){crearParada1(e.latlng);return;}
     if(numParadasVisibles>=2&&!parada2Marker){crearParada2(e.latlng);return;}
     if(numParadasVisibles>=3&&!parada3Marker){crearParada3(e.latlng);return;}
     if(!destinoMarker){crearDestino(e.latlng);return;}
-    // si ya hay todo, y quiere cambiar la ultima parada
-    if(numParadasVisibles==2 && parada2Marker){crearParada2(e.latlng);return;}
   });
   let hoy=new Date().toISOString().split('T')[0]; let now=new Date(); now.setMinutes(now.getMinutes()+30); let hora=now.toTimeString().slice(0,5);
   let f=document.getElementById('fecha'); if(f&&!f.value) f.value=hoy; let h=document.getElementById('hora'); if(h&&!h.value) h.value=hora;
@@ -123,7 +123,7 @@ const rojoIcon=new L.Icon({iconUrl:'https://cdn.jsdelivr.net/gh/pointhi/leaflet-
 const amarilloIcon=new L.Icon({iconUrl:'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-yellow.png',shadowUrl:'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',iconSize:[35,55],iconAnchor:[17,55]});
 const naranjaIcon=new L.Icon({iconUrl:'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-orange.png',shadowUrl:'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',iconSize:[35,55],iconAnchor:[17,55]});
 const azulIcon=new L.Icon({iconUrl:'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',shadowUrl:'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',iconSize:[35,55],iconAnchor:[17,55]});
-function makeDraggable(m, cb){m.on('touchstart mousedown', ()=>{ if(map) map.dragging.disable(); }); m.on('dragend', (ev)=>{ if(map) map.dragging.enable(); cb(ev.target.getLatLng()); }); m.on('touchend', ()=>{ if(map) map.dragging.enable(); });}
+function makeDraggable(m, cb){m.on('dragend', (ev)=>{ cb(ev.target.getLatLng()); });}
 async function ponerDireccion(lat,lng,inputId){
   try{
     let r=await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`);
@@ -140,20 +140,30 @@ function crearParada3(ll){if(!parada3Marker){parada3Marker=L.marker(ll,{draggabl
 function agregarParada(){
   if(numParadasVisibles>=3){alert('Máximo 3 paradas');return;}
   numParadasVisibles++;
-  for(let i=1;i<=numParadasVisibles;i++){
-    document.getElementById('boxP'+i).style.display='flex';
-  }
-  document.getElementById('txt-paradas').innerText=numParadasVisibles+' / 3';
+  document.getElementById('boxP'+numParadasVisibles).style.display='flex';
+  document.getElementById('txt-paradas').innerText=numParadasVisibles+' / 3 paradas';
   toggleMenu();
-  // si ya tienes origen, avisa que toques el mapa
-  if(origenMarker) alert('Toca el mapa donde va la Parada '+numParadasVisibles);
 }
-function miUbicacion(){navigator.geolocation.getCurrentPosition(p=>{let ll={lat:p.coords.latitude,lng:p.coords.longitude};miPos=ll;crearOrigen(ll);if(map) map.setView([ll.lat,ll.lng],16); ponerDireccion(ll.lat,ll.lng,'origen');});}
+function quitarParada(n){
+  if(n==1 && parada1Marker){map.removeLayer(parada1Marker); parada1Marker=null; document.getElementById('boxP1').style.display='none';}
+  if(n==2 && parada2Marker){map.removeLayer(parada2Marker); parada2Marker=null; document.getElementById('boxP2').style.display='none';}
+  if(n==3 && parada3Marker){map.removeLayer(parada3Marker); parada3Marker=null; document.getElementById('boxP3').style.display='none';}
+  let visibles=0;
+  if(document.getElementById('boxP1').style.display!='none') visibles++;
+  if(document.getElementById('boxP2').style.display!='none') visibles++;
+  if(document.getElementById('boxP3').style.display!='none') visibles++;
+  numParadasVisibles=visibles;
+  document.getElementById('txt-paradas').innerText=numParadasVisibles+' / 3 paradas';
+  trazarLocal();
+}
+function miUbicacion(){navigator.geolocation.getCurrentPosition(p=>{let ll={lat:p.coords.latitude,lng:p.coords.longitude};miPos=ll;crearOrigen(ll);if(map) map.setView([ll.lat,ll.lng],16);});}
 function calcDist(lat1,lon1,lat2,lon2){let R=6371;let dLat=(lat2-lat1)*Math.PI/180;let dLon=(lon2-lon1)*Math.PI/180;let a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));}
 function calcularPrecio(km){
-    let arranque = 40; let costoKm = 10; let precio;
-    if(km <= 1){ precio = arranque; } else { precio = Math.round(arranque + ((km - 1) * costoKm)); }
-    if(precio < 80) precio = 80; return precio;
+    let arranque=40; let costoKm=10; let precio;
+    if(km<=1){ precio=arranque; } else { precio=Math.round(arranque+((km-1)*costoKm)); }
+    if(precio<80) precio=80;
+    let extra=0; if(parada1Marker) extra++; if(parada2Marker) extra++; if(parada3Marker) extra++;
+    precio+=extra*20; return precio;
 }
 function trazarLocal(){
     if(!origenMarker) return; let pts=[]; pts.push(origenMarker.getLatLng());
@@ -163,7 +173,7 @@ function trazarLocal(){
     kmActual=Math.round(dist*10)/10; if(kmActual<0.8)kmActual=0.8;
     precioActual=calcularPrecio(kmActual); tiempoActual=Math.round(kmActual*3.2);
     document.getElementById('cotizacion').style.display='block';
-    document.getElementById('dist').innerText=kmActual+' km - '+tiempoActual+' min';
+    document.getElementById('dist').innerText=kmActual+' km - '+tiempoActual+' min'+(pts.length>2?' - '+(pts.length-2)+' paradas':'');
     document.getElementById('precio').innerText='$'+precioActual+' MXN';
     document.getElementById('btnPedir').innerText='Confirmar Flete $'+precioActual+' - '+kmActual+'km';
     document.getElementById('btnPedir').style.display='block';
@@ -180,7 +190,7 @@ async function trazarRutaReal(pts){
       precioActual=calcularPrecio(kmActual);
       if(routeLine) map.removeLayer(routeLine);
       routeLine=L.polyline(route.geometry.coordinates.map(c=>[c[1],c[0]]),{color:'#276EF1',weight:6}).addTo(map);
-      document.getElementById('dist').innerText=kmActual+' km - '+tiempoActual+' min';
+      document.getElementById('dist').innerText=kmActual+' km - '+tiempoActual+' min'+(pts.length>2?' - '+(pts.length-2)+' paradas':'');
       document.getElementById('precio').innerText='$'+precioActual+' MXN';
       document.getElementById('btnPedir').innerText='Confirmar Flete $'+precioActual+' - '+kmActual+'km';
       map.fitBounds(routeLine.getBounds(),{padding:[80,80]});
@@ -189,31 +199,29 @@ async function trazarRutaReal(pts){
       routeLine=L.polyline(pts,{color:'#276EF1',weight:6,dashArray:'8,8'}).addTo(map);
     }
 }
-let intervaloCliente = null;
+let intervaloCliente=null;
 async function pedir(){
   if(!precioActual||!origenLatLng) return alert('Toca el mapa para origen y destino');
   let ca=JSON.parse(localStorage.getItem('clienteActual')||'null');
   let fecha=document.getElementById('fecha').value; let hora=document.getElementById('hora').value;
   if(!fecha||!hora){alert('Abre el menú ☰ y selecciona fecha y hora'); toggleMenu(); return;}
   let id='V'+Date.now();
-  let data={id:id,cliente:ca?ca.nombre:'Cliente',cliente_tel:ca?ca.tel:'',fecha:fecha,hora:hora,origen:document.getElementById('origen').value,destino:document.getElementById('destino').value,origen_lat:origenLatLng.lat,origen_lng:origenLatLng.lng,destino_lat:destinoLatLng?destinoLatLng.lat:0,destino_lng:destinoLatLng?destinoLatLng.lng:0,kms:kmActual,precio:precioActual,status:'pendiente',timestamp:new Date().toISOString()};
+  let data={id:id,cliente:ca?ca.nombre:'Cliente',cliente_tel:ca?ca.tel:'',fecha:fecha,hora:hora,origen:document.getElementById('origen').value,destino:document.getElementById('destino').value,origen_lat:origenLatLng.lat,origen_lng:origenLatLng.lng,destino_lat:destinoLatLng?destinoLatLng.lat:0,destino_lng:destinoLatLng?destinoLatLng.lng:0,parada1:document.getElementById('parada1').value,parada2:document.getElementById('parada2').value,parada3:document.getElementById('parada3').value,kms:kmActual,precio:precioActual,status:'pendiente',timestamp:new Date().toISOString()};
   await fetch('/api/viaje',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
   localStorage.setItem('viajeActualId', id);
-  alert('✅ Flete CONFIRMADO '+fecha+' '+hora+' $'+precioActual);
+  alert('✅ Flete CONFIRMADO $'+precioActual+' CON '+numParadasVisibles+' PARADAS');
   if(intervaloCliente) clearInterval(intervaloCliente);
-  intervaloCliente = setInterval(()=>verEstadoMiViaje(id), 4000);
-  verEstadoMiViaje(id);
+  intervaloCliente=setInterval(()=>verEstadoMiViaje(id),4000); verEstadoMiViaje(id);
 }
-function borrarTodo(){document.getElementById('origen').value="";document.getElementById('destino').value="";document.getElementById('parada1').value="";document.getElementById('parada2').value="";document.getElementById('parada3').value="";document.getElementById('cotizacion').style.display="none";document.getElementById('btnPedir').style.display="none";if(origenMarker){map.removeLayer(origenMarker);origenMarker=null;}if(destinoMarker){map.removeLayer(destinoMarker);destinoMarker=null;}if(parada1Marker){map.removeLayer(parada1Marker);parada1Marker=null;}if(parada2Marker){map.removeLayer(parada2Marker);parada2Marker=null;}if(parada3Marker){map.removeLayer(parada3Marker);parada3Marker=null;}if(routeLine){map.removeLayer(routeLine);routeLine=null;}precioActual=0; kmActual=0; origenLatLng=null; destinoLatLng=null; numParadasVisibles=0;document.getElementById('boxP1').style.display='none';document.getElementById('boxP2').style.display='none';document.getElementById('boxP3').style.display='none';document.getElementById('txt-paradas').innerText='0 / 3';}
+function borrarTodo(){document.getElementById('origen').value="";document.getElementById('destino').value="";document.getElementById('parada1').value="";document.getElementById('parada2').value="";document.getElementById('parada3').value="";document.getElementById('cotizacion').style.display="none";document.getElementById('btnPedir').style.display="none";if(origenMarker){map.removeLayer(origenMarker);origenMarker=null;}if(destinoMarker){map.removeLayer(destinoMarker);destinoMarker=null;}if(parada1Marker){map.removeLayer(parada1Marker);parada1Marker=null;}if(parada2Marker){map.removeLayer(parada2Marker);parada2Marker=null;}if(parada3Marker){map.removeLayer(parada3Marker);parada3Marker=null;}if(routeLine){map.removeLayer(routeLine);routeLine=null;}precioActual=0; kmActual=0; origenLatLng=null; destinoLatLng=null; numParadasVisibles=0;document.getElementById('boxP1').style.display='none';document.getElementById('boxP2').style.display='none';document.getElementById('boxP3').style.display='none';document.getElementById('txt-paradas').innerText='0 / 3 paradas';}
 function mostrarRegistroChofer(){document.getElementById('form-login').style.display='none';document.getElementById('form-registro').style.display='block';}
 function mostrarLoginChofer(){document.getElementById('form-registro').style.display='none';document.getElementById('form-login').style.display='block';}
 async function choferRegistrar(){
   let n=document.getElementById('reg-nombre').value.trim(), t=document.getElementById('reg-tel').value.trim(), pl=document.getElementById('reg-placas').value.trim().toUpperCase(), mo=document.getElementById('reg-modelo').value.trim(), p=document.getElementById('reg-pass').value.trim();
   if(!n||!t||!pl||!mo||!p){ alert('Llena todo'); return; }
-  let match = mo.match(/(19|20)[0-9]{2}/);
-  if(!match){ alert('En modelo escribe el AÑO. Ej: Versa 2022 blanco'); return; }
-  let anio = parseInt(match[0]); let anioActual = new Date().getFullYear(); let anioMinimo = anioActual - 6;
-  if(anio < anioMinimo){ alert('❌ No aceptamos coches con más de 6 años. Tu coche es '+anio+' y el mínimo es '+anioMinimo); return; }
+  let match=mo.match(/(19|20)[0-9]{2}/); if(!match){ alert('En modelo escribe el AÑO. Ej: Versa 2022'); return; }
+  let anio=parseInt(match[0]); let anioActual=new Date().getFullYear(); let anioMinimo=anioActual-6;
+  if(anio<anioMinimo){ alert('❌ Coche con más de 6 años. Mínimo '+anioMinimo); return; }
   let res=await fetch('/api/chofer/registrar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nombre:n,tel:t,placas:pl,modelo:mo,anio:anio,pass:p})});
   let d=await res.json(); if(!d.ok){alert(d.error);return;}
   localStorage.setItem('choferActual',JSON.stringify(d.chofer)); verificarSesionChofer();
@@ -221,43 +229,20 @@ async function choferRegistrar(){
 async function choferLogin(){let t=document.getElementById('chofer-tel').value.trim(),c=document.getElementById('chofer-pass').value.trim();let res=await fetch('/api/chofer/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tel:t,pass:c})});let d=await res.json();if(!d.ok){document.getElementById('msg-chofer').innerText=d.error;return;}localStorage.setItem('choferActual',JSON.stringify(d.chofer));verificarSesionChofer();}
 let radarInterval=null, ultimoViajeId=null;
 function verificarSesionChofer(){
-  let a=JSON.parse(localStorage.getItem('choferActual')||'null');
-  let va=JSON.parse(localStorage.getItem('viajeActivo')||'null');
-  if(a){
-    document.getElementById('box-login-chofer').style.display='none';
-    document.getElementById('box-viajes-chofer').style.display='block';
-    document.getElementById('nombre-chofer-log').innerText=a.nombre;
-    miChofer=a;
-    if(va){ viajeActivo=va; mostrarViajeActivo(); } else { iniciarRadarAGL(); }
-  }else{
-    document.getElementById('box-login-chofer').style.display='block';
-    document.getElementById('box-viajes-chofer').style.display='none';
-  }
+  let a=JSON.parse(localStorage.getItem('choferActual')||'null'); let va=JSON.parse(localStorage.getItem('viajeActivo')||'null');
+  if(a){document.getElementById('box-login-chofer').style.display='none';document.getElementById('box-viajes-chofer').style.display='block';document.getElementById('nombre-chofer-log').innerText=a.nombre;miChofer=a;if(va){ viajeActivo=va; mostrarViajeActivo(); } else { iniciarRadarAGL(); }}else{document.getElementById('box-login-chofer').style.display='block';document.getElementById('box-viajes-chofer').style.display='none';}
 }
 function iniciarRadarAGL(){
-  if(navigator.geolocation){
-    navigator.geolocation.watchPosition(p=>{
-      miPos={lat:p.coords.latitude,lng:p.coords.longitude};
-      fetch('/api/chofer/heartbeat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tel:miChofer.tel,lat:miPos.lat,lng:miPos.lng})});
-    },null,{enableHighAccuracy:true});
-  }
-  if(radarInterval) clearInterval(radarInterval);
-  radarInterval=setInterval(()=>{ mostrarViajesChofer(); }, 3000);
-  mostrarViajesChofer();
+  if(navigator.geolocation){navigator.geolocation.watchPosition(p=>{miPos={lat:p.coords.latitude,lng:p.coords.longitude};fetch('/api/chofer/heartbeat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tel:miChofer.tel,lat:miPos.lat,lng:miPos.lng})});},null,{enableHighAccuracy:true});}
+  if(radarInterval) clearInterval(radarInterval); radarInterval=setInterval(()=>{ mostrarViajesChofer(); }, 3000); mostrarViajesChofer();
 }
 function mostrarViajesChofer(){
-  let va = localStorage.getItem('viajeActivo');
-  if(va){ return; }
+  let va=localStorage.getItem('viajeActivo'); if(va){ return; }
   fetch('/api/viajes_cercanos?lat='+miPos.lat+'&lng='+miPos.lng).then(r=>r.json()).then(data=>{
     let lista=document.getElementById('lista-viajes-chofer');
     let fil=data.filter(x=>x.status==='pendiente');
-    if(fil.length>0 && fil[0].id!==ultimoViajeId){
-      ultimoViajeId=fil[0].id;
-      document.getElementById('radar-txt').innerText=fil[0].dist_km+'km - $'+fil[0].precio;
-      document.getElementById('alerta-radar').style.display='block';
-      setTimeout(()=>{ document.getElementById('alerta-radar').style.display='none'; }, 6000);
-    }
-    lista.innerHTML=fil.map(x=>`<div style="border:2px solid #00c853;border-radius:12px;padding:12px;margin:8px 0;background:#f0fff4"><b>📍 A ${x.dist_km}km - $${x.precio}</b><br>${x.cliente} | ${x.kms}km<br>📅 ${x.fecha} ${x.hora}<br><span style="font-size:11px">${x.origen}<br>→ ${x.destino}</span><br><button onclick="tomarViaje('${x.id}')" style="background:#000;color:#fff;border:none;padding:12px;width:100%;border-radius:10px;margin-top:8px;font-weight:800">TOMAR $${x.precio}</button></div>`).join('')||'<div style="padding:30px;text-align:center;color:#888">🔍 Radar AGL activo<br>Buscando viajes en 15km...<br><br>Tu pos: '+miPos.lat.toFixed(4)+'</div>';
+    if(fil.length>0 && fil[0].id!==ultimoViajeId){ultimoViajeId=fil[0].id;document.getElementById('radar-txt').innerText=fil[0].dist_km+'km - $'+fil[0].precio;document.getElementById('alerta-radar').style.display='block';setTimeout(()=>{ document.getElementById('alerta-radar').style.display='none'; }, 6000);}
+    lista.innerHTML=fil.map(x=>`<div style="border:2px solid #00c853;border-radius:12px;padding:12px;margin:8px 0;background:#f0fff4"><b>📍 A ${x.dist_km}km - $${x.precio}</b><br>${x.cliente} | ${x.kms}km<br>📅 ${x.fecha} ${x.hora}<br><span style="font-size:11px">${x.origen}<br>${x.parada1?'🟡 P1: '+x.parada1+'<br>':''}${x.parada2?'🟠 P2: '+x.parada2+'<br>':''}→ ${x.destino}</span><br><button onclick="tomarViaje('${x.id}')" style="background:#000;color:#fff;border:none;padding:12px;width:100%;border-radius:10px;margin-top:8px;font-weight:800">TOMAR $${x.precio}</button></div>`).join('')||'<div style="padding:30px;text-align:center;color:#888">🔍 Radar AGL activo<br>Buscando viajes en 15km...</div>';
   });
 }
 function choferLogout(){ if(radarInterval) clearInterval(radarInterval); localStorage.removeItem('choferActual'); location.reload(); }    
@@ -266,131 +251,32 @@ function mostrarLoginCli(){document.getElementById('form-registro-c').style.disp
 async function clienteRegistrar(){let n=document.getElementById('cli-reg-nombre').value.trim(),t=document.getElementById('cli-reg-tel').value.trim(),p=document.getElementById('cli-reg-pass').value.trim();let res=await fetch('/api/cliente/registrar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nombre:n,tel:t,pass:p})});let d=await res.json();if(!d.ok){alert(d.error);return;}localStorage.setItem('clienteActual',JSON.stringify(d.cliente));verificarSesionClienteLogged();}
 async function clienteLogin(){let t=document.getElementById('cli-tel').value.trim(),c=document.getElementById('cli-pass').value.trim();let res=await fetch('/api/cliente/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tel:t,pass:c})});let d=await res.json();if(!d.ok){document.getElementById('msg-cli').innerText=d.error;return;}localStorage.setItem('clienteActual',JSON.stringify(d.cliente));verificarSesionClienteLogged();}
 function verificarSesionCliente(){let ca=JSON.parse(localStorage.getItem('clienteActual')||'null'); initMap(); if(ca){document.getElementById('box-login-cliente').style.display='none';document.getElementById('box-cliente-viaje').style.display='block';setTimeout(()=>{if(map) map.invalidateSize();},400);}else{document.getElementById('box-login-cliente').style.display='block';document.getElementById('box-cliente-viaje').style.display='none';}}
-function verificarSesionClienteLogged(){
-  initMap();
-  document.getElementById('box-login-cliente').style.display='none';
-  document.getElementById('box-cliente-viaje').style.display='block';
-  setTimeout(()=>{if(map) map.invalidateSize();},400);
-  let idGuardado = localStorage.getItem('viajeActualId');
-  if(idGuardado){
-    if(intervaloCliente) clearInterval(intervaloCliente);
-    intervaloCliente = setInterval(()=>verEstadoMiViaje(idGuardado), 4000);
-    verEstadoMiViaje(idGuardado);
-  }
-}
-async function verEstadoMiViaje(id){
-  try{
-    let r = await fetch('/api/viaje/estado/'+id);
-    let v = await r.json();
-    if(!v || !v.id) return;
-    let cot = document.getElementById('cotizacion');
-    cot.style.display='block';
-    if(v.status === 'pendiente'){
-      cot.innerHTML = `<b>🔍 BUSCANDO CHOFER...</b><br><span style="font-size:12px">${v.origen} → ${v.destino}</span><br>💰 $${v.precio}`;
-    } else if(v.status === 'tomado' || v.status === 'en_curso'){
-      cot.innerHTML = `<div style="background:#000;color:#fff;padding:12px;border-radius:12px;text-align:left"><b style="color:#00e676">✅ CHOFER EN CAMINO </b><br><b>Chofer: ${v.chofer_nombre}</b><br>🚗 ${v.chofer_modelo}<br>🔖 PLACA: <b style="font-size:20px;letter-spacing:1px">${v.chofer_placas}</b><br><a href="tel:${v.chofer_tel}" style="display:block;background:#fff;color:#000;padding:10px;border-radius:8px;margin-top:8px;text-align:center;text-decoration:none;font-weight:800">📞 LLAMAR CHOFER ${v.chofer_tel}</a></div>`;
-    } else if(v.status === 'finalizado'){
-      clearInterval(intervaloCliente);
-      localStorage.removeItem('viajeActualId');
-      cot.innerHTML = `<b>✅ VIAJE FINALIZADO</b>`;
-      setTimeout(()=>{ cot.style.display='none'; }, 4000);
-    }
-  }catch(e){}
-}  
-let viajeActivo = null;
-async function tomarViaje(id){
-  let ch=JSON.parse(localStorage.getItem('choferActual'));
-  let res=await fetch('/api/viaje/tomar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:id,chofer_tel:ch.tel,chofer_nombre:ch.nombre,chofer_placas:ch.placas||'',chofer_modelo:ch.modelo||''})});
-  let d=await res.json();
-  if(!d.ok) return alert('Ya lo tomó otro');
-  viajeActivo = d.viaje;
-  localStorage.setItem('viajeActivo', JSON.stringify(viajeActivo));
-  mostrarViajeActivo();
-}
+function verificarSesionClienteLogged(){initMap();document.getElementById('box-login-cliente').style.display='none';document.getElementById('box-cliente-viaje').style.display='block';setTimeout(()=>{if(map) map.invalidateSize();},400);let idGuardado=localStorage.getItem('viajeActualId');if(idGuardado){if(intervaloCliente) clearInterval(intervaloCliente);intervaloCliente=setInterval(()=>verEstadoMiViaje(idGuardado),4000);verEstadoMiViaje(idGuardado);}}
+async function verEstadoMiViaje(id){try{let r=await fetch('/api/viaje/estado/'+id);let v=await r.json();if(!v||!v.id) return;let cot=document.getElementById('cotizacion');cot.style.display='block';if(v.status==='pendiente'){cot.innerHTML=`<b>🔍 BUSCANDO CHOFER...</b><br><span style="font-size:12px">${v.origen} → ${v.destino}</span><br>💰 $${v.precio}`;}else if(v.status==='tomado'||v.status==='en_curso'){cot.innerHTML=`<div style="background:#000;color:#fff;padding:12px;border-radius:12px;text-align:left"><b style="color:#00e676">✅ CHOFER EN CAMINO </b><br><b>Chofer: ${v.chofer_nombre}</b><br>🚗 ${v.chofer_modelo}<br>🔖 PLACA: <b style="font-size:20px">${v.chofer_placas}</b><br><a href="tel:${v.chofer_tel}" style="display:block;background:#fff;color:#000;padding:10px;border-radius:8px;margin-top:8px;text-align:center;text-decoration:none;font-weight:800">📞 LLAMAR CHOFER ${v.chofer_tel}</a></div>`;}else if(v.status==='finalizado'){clearInterval(intervaloCliente);localStorage.removeItem('viajeActualId');cot.innerHTML=`<b>✅ VIAJE FINALIZADO</b>`;setTimeout(()=>{ cot.style.display='none'; },4000);}}catch(e){}}
+let viajeActivo=null;
+async function tomarViaje(id){let ch=JSON.parse(localStorage.getItem('choferActual'));let res=await fetch('/api/viaje/tomar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:id,chofer_tel:ch.tel,chofer_nombre:ch.nombre,chofer_placas:ch.placas||'',chofer_modelo:ch.modelo||''})});let d=await res.json();if(!d.ok) return alert('Ya lo tomó otro');viajeActivo=d.viaje;localStorage.setItem('viajeActivo', JSON.stringify(viajeActivo));mostrarViajeActivo();}
 function mostrarViajeActivo(){
-  let v = viajeActivo || JSON.parse(localStorage.getItem('viajeActivo')||'null');
-  if(!v) return;
-  document.getElementById('lista-viajes-chofer').innerHTML = `
-    <div style="background:#000;color:#fff;padding:8px 10px;border-radius:10px;margin-bottom:6px;font-size:11px">
-      <b>✅ ${v.cliente} - $${v.precio} | ${v.kms}km</b> | ${v.cliente_tel}<br>📅 ${v.fecha} ${v.hora}
-    </div>
-    <div style="background:#fff;padding:8px;border-radius:10px;border:1px solid #ddd">
-      <div style="font-size:11px"><b>O:</b> ${v.origen}<br><b>D:</b> ${v.destino}</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px">
-        <a href="https://www.google.com/maps/dir/?api=1&destination=${v.origen_lat},${v.origen_lng}" target="_blank" style="display:block;background:#276EF1;color:#fff;text-align:center;padding:8px;border-radius:8px;text-decoration:none;font-weight:800;font-size:11px">📍 ORIGEN</a>
-        <a href="https://www.google.com/maps/dir/${encodeURIComponent(v.origen)}/${encodeURIComponent(v.destino)}/" target="_blank" style="display:block;background:#000;color:#FFD700;border:1px solid #FFD700;text-align:center;padding:8px;border-radius:8px;text-decoration:none;font-weight:800;font-size:11px">🗺️ RECORRIDO</a>
-        <a href="https://waze.com/ul?ll=${v.origen_lat},${v.origen_lng}&navigate=yes" target="_blank" style="display:block;background:#00c853;color:#fff;text-align:center;padding:8px;border-radius:8px;text-decoration:none;font-weight:800;font-size:11px">🚗 WAZE</a>
-        <a href="tel:${v.cliente_tel}" style="display:block;background:#fff;border:1px solid #000;color:#000;text-align:center;padding:8px;border-radius:8px;text-decoration:none;font-weight:800;font-size:11px">📞 LLAMAR</a>
-      </div>
-      <a href="https://wa.me/52${v.cliente_tel}" target="_blank" style="display:block;background:#25D366;color:#fff;text-align:center;padding:8px;border-radius:8px;text-decoration:none;font-weight:800;font-size:11px;margin-top:6px">💬 WHATSAPP</a>
-      <button onclick="finalizarViaje()" style="width:100%;background:#ff3b30;color:#fff;border:none;padding:9px;border-radius:8px;font-weight:800;margin-top:6px;font-size:12px">🏁 FINALIZAR VIAJE</button>
-    </div>
-    <div id="map-chofer" style="height:280px;margin-top:6px;border-radius:10px"></div>
-  `;
-  setTimeout(()=>{
-    let mc = L.map('map-chofer').setView([v.origen_lat, v.origen_lng], 14);
-    L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',{subdomains:['mt0','mt1','mt2','mt3']}).addTo(mc);
-    L.marker([v.origen_lat, v.origen_lng], {icon: verdeIcon}).addTo(mc).bindPopup("ORIGEN").openPopup();
-    if(v.destino_lat) L.marker([v.destino_lat, v.destino_lng], {icon: rojoIcon}).addTo(mc).bindPopup("DESTINO");
-  }, 300);
+  let v=viajeActivo||JSON.parse(localStorage.getItem('viajeActivo')||'null');if(!v) return;
+  document.getElementById('lista-viajes-chofer').innerHTML=`<div style="background:#000;color:#fff;padding:8px 10px;border-radius:10px;margin-bottom:6px;font-size:11px"><b>✅ ${v.cliente} - $${v.precio} | ${v.kms}km</b> | ${v.cliente_tel}<br>📅 ${v.fecha} ${v.hora}</div><div style="background:#fff;padding:8px;border-radius:10px;border:1px solid #ddd"><div style="font-size:11px"><b>O:</b> ${v.origen}<br>${v.parada1?'<b style=color:#ffcc00>🟡 P1:</b> '+v.parada1+'<br>':''}${v.parada2?'<b style=color:#ff9500>🟠 P2:</b> '+v.parada2+'<br>':''}${v.parada3?'<b style=color:#00e5ff>🔵 P3:</b> '+v.parada3+'<br>':''}<b>D:</b> ${v.destino}</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px"><a href="https://www.google.com/maps/dir/?api=1&destination=${v.origen_lat},${v.origen_lng}" target="_blank" style="display:block;background:#276EF1;color:#fff;text-align:center;padding:8px;border-radius:8px;text-decoration:none;font-weight:800;font-size:11px">📍 ORIGEN</a><a href="https://www.google.com/maps/dir/${encodeURIComponent(v.origen)}/${encodeURIComponent(v.destino)}/" target="_blank" style="display:block;background:#000;color:#FFD700;border:1px solid #FFD700;text-align:center;padding:8px;border-radius:8px;text-decoration:none;font-weight:800;font-size:11px">🗺️ RECORRIDO</a><a href="https://waze.com/ul?ll=${v.origen_lat},${v.origen_lng}&navigate=yes" target="_blank" style="display:block;background:#00c853;color:#fff;text-align:center;padding:8px;border-radius:8px;text-decoration:none;font-weight:800;font-size:11px">🚗 WAZE</a><a href="tel:${v.cliente_tel}" style="display:block;background:#fff;border:1px solid #000;color:#000;text-align:center;padding:8px;border-radius:8px;text-decoration:none;font-weight:800;font-size:11px">📞 LLAMAR</a></div><a href="https://wa.me/52${v.cliente_tel}" target="_blank" style="display:block;background:#25D366;color:#fff;text-align:center;padding:8px;border-radius:8px;text-decoration:none;font-weight:800;font-size:11px;margin-top:6px">💬 WHATSAPP</a><button onclick="finalizarViaje()" style="width:100%;background:#ff3b30;color:#fff;border:none;padding:9px;border-radius:8px;font-weight:800;margin-top:6px;font-size:12px">🏁 FINALIZAR VIAJE</button></div><div id="map-chofer" style="height:280px;margin-top:6px;border-radius:10px"></div>`;
+  setTimeout(()=>{let mc=L.map('map-chofer').setView([v.origen_lat, v.origen_lng],14);L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',{subdomains:['mt0','mt1','mt2','mt3']}).addTo(mc);L.marker([v.origen_lat, v.origen_lng], {icon: verdeIcon}).addTo(mc).bindPopup("ORIGEN").openPopup();if(v.destino_lat) L.marker([v.destino_lat, v.destino_lng], {icon: rojoIcon}).addTo(mc).bindPopup("DESTINO");},300);
 }
-function finalizarViaje(){
-  if(!confirm('¿Finalizar viaje?')) return;
-  let v = JSON.parse(localStorage.getItem('viajeActivo'));
-  fetch('/api/viaje/finalizar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:v.id})});
-  localStorage.removeItem('viajeActivo');
-  viajeActivo=null;
-  if(radarInterval) clearInterval(radarInterval);
-  alert('✅ Viaje finalizado');
-  location.reload();
-}
+function finalizarViaje(){if(!confirm('¿Finalizar viaje?')) return;let v=JSON.parse(localStorage.getItem('viajeActivo'));fetch('/api/viaje/finalizar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:v.id})});localStorage.removeItem('viajeActivo');viajeActivo=null;if(radarInterval) clearInterval(radarInterval);alert('✅ Viaje finalizado');location.reload();}
 async function adminLogin(){let p=document.getElementById('admin-pass-input').value;let res=await fetch('/api/admin/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:p})});let d=await res.json();if(!d.ok){alert(d.error);return;}localStorage.setItem('adminToken',p);document.getElementById('admin-login').style.display='none';document.getElementById('admin-panel').style.display='block';cargarAdmin();}
-function adminTab(tab){
-  document.getElementById('admin-viajes').style.display=tab==='viajes'?'block':'none';
-  document.getElementById('admin-choferes').style.display=tab==='choferes'?'block':'none';
-  document.getElementById('admin-clientes').style.display=tab==='clientes'?'block':'none';
-  document.getElementById('btn-viajes').style.background=tab==='viajes'?'#000':'#fff';
-  document.getElementById('btn-viajes').style.color=tab==='viajes'?'#fff':'#000';
-  document.getElementById('btn-choferes').style.background=tab==='choferes'?'#000':'#fff';
-  document.getElementById('btn-choferes').style.color=tab==='choferes'?'#fff':'#000';
-  document.getElementById('btn-clientes').style.background=tab==='clientes'?'#000':'#fff';
-  document.getElementById('btn-clientes').style.color=tab==='clientes'?'#fff':'#000';
-}
-async function cargarAdmin(){
-  let pass=localStorage.getItem('adminToken');
-  let res=await fetch('/api/admin/data',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pass})});
-  let d=await res.json();
-  document.getElementById('admin-viajes').innerHTML=d.viajes.slice().reverse().map(v=>`<div style="border-bottom:1px solid #eee;padding:8px;background:#fff;margin:4px 0;border-radius:8px"><b>${v.fecha} ${v.hora}</b> ${v.cliente} $${v.precio} ${v.kms}km<br><span style="font-size:11px">${v.origen} → ${v.destino}</span> <button onclick="borrarAdmin('viaje',null,'${v.id}')" style="background:#ff5252;color:#fff;border:none;padding:4px 8px;border-radius:6px;float:right">Borrar</button></div>`).join('');
-  document.getElementById('admin-choferes').innerHTML=(d.choferes||[]).map(c=>`<div style="background:#fff;padding:10px;margin:6px 0;border-radius:10px;border:1px solid #ddd"><b>${c.nombre}</b> - ${c.tel}<br>🚗 ${c.modelo||'Sin modelo'} (${c.anio||''})<br>🔖 Placas: <b>${c.placas||'Sin placas'}</b> <button onclick="borrarAdmin('chofer','${c.tel}')" style="background:#ff5252;color:#fff;border:none;padding:4px 8px;border-radius:6px;float:right">Borrar</button></div>`).join('')||'Sin choferes';
-  document.getElementById('admin-clientes').innerHTML=(d.clientes||[]).map(c=>`<div style="background:#fff;padding:8px;margin:4px 0;border-radius:8px">${c.nombre} - ${c.tel} <button onclick="borrarAdmin('cliente','${c.tel}')" style="background:#ff5252;color:#fff;border:none;padding:4px 8px;border-radius:6px;float:right">Borrar</button></div>`).join('')||'Sin clientes';
-}
-async function borrarAdmin(tipo,tel,id){
-  let pass=localStorage.getItem('adminToken');
-  if(!confirm('¿Borrar?')) return;
-  await fetch('/api/admin/borrar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pass,tipo:tipo,tel:tel,id:id})});
-  cargarAdmin();
-}
-(function(){
-  let r=localStorage.getItem('rol_AGL'); let ca=JSON.parse(localStorage.getItem('clienteActual')||'null'); let ch=JSON.parse(localStorage.getItem('choferActual')||'null'); let at=localStorage.getItem('adminToken');
-  if(ch && (r==='chofer' || !r)){document.getElementById('modal-rol').style.display='none';document.getElementById('vista-chofer').style.display='block';verificarSesionChofer();}
-  else if(at && r==='admin'){document.getElementById('modal-rol').style.display='none';document.getElementById('vista-admin').style.display='block';document.getElementById('admin-login').style.display='none';document.getElementById('admin-panel').style.display='block';cargarAdmin();}
-  else if(ca){localStorage.setItem('rol_AGL','cliente');document.getElementById('modal-rol').style.display='none';document.getElementById('vista-cliente').style.display='block';verificarSesionCliente();}
-  else if(r==='cliente'){document.getElementById('modal-rol').style.display='none';document.getElementById('vista-cliente').style.display='block';verificarSesionCliente();}
-})();
+function adminTab(tab){document.getElementById('admin-viajes').style.display=tab==='viajes'?'block':'none';document.getElementById('admin-choferes').style.display=tab==='choferes'?'block':'none';document.getElementById('admin-clientes').style.display=tab==='clientes'?'block':'none';document.getElementById('btn-viajes').style.background=tab==='viajes'?'#000':'#fff';document.getElementById('btn-viajes').style.color=tab==='viajes'?'#fff':'#000';document.getElementById('btn-choferes').style.background=tab==='choferes'?'#000':'#fff';document.getElementById('btn-choferes').style.color=tab==='choferes'?'#fff':'#000';document.getElementById('btn-clientes').style.background=tab==='clientes'?'#000':'#fff';document.getElementById('btn-clientes').style.color=tab==='clientes'?'#fff':'#000';}
+async function cargarAdmin(){let pass=localStorage.getItem('adminToken');let res=await fetch('/api/admin/data',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pass})});let d=await res.json();document.getElementById('admin-viajes').innerHTML=d.viajes.slice().reverse().map(v=>`<div style="border-bottom:1px solid #eee;padding:8px;background:#fff;margin:4px 0;border-radius:8px"><b>${v.fecha} ${v.hora}</b> ${v.cliente} $${v.precio} ${v.kms}km<br><span style="font-size:11px">${v.origen} ${v.parada1?'-> '+v.parada1:''} ${v.parada2?'-> '+v.parada2:''} → ${v.destino}</span> <button onclick="borrarAdmin('viaje',null,'${v.id}')" style="background:#ff5252;color:#fff;border:none;padding:4px 8px;border-radius:6px;float:right">Borrar</button></div>`).join('');document.getElementById('admin-choferes').innerHTML=(d.choferes||[]).map(c=>`<div style="background:#fff;padding:10px;margin:6px 0;border-radius:10px;border:1px solid #ddd"><b>${c.nombre}</b> - ${c.tel}<br>🚗 ${c.modelo||''} (${c.anio||''})<br>🔖 Placas: <b>${c.placas||''}</b> <button onclick="borrarAdmin('chofer','${c.tel}')" style="background:#ff5252;color:#fff;border:none;padding:4px 8px;border-radius:6px;float:right">Borrar</button></div>`).join('')||'Sin choferes';document.getElementById('admin-clientes').innerHTML=(d.clientes||[]).map(c=>`<div style="background:#fff;padding:8px;margin:4px 0;border-radius:8px">${c.nombre} - ${c.tel} <button onclick="borrarAdmin('cliente','${c.tel}')" style="background:#ff5252;color:#fff;border:none;padding:4px 8px;border-radius:6px;float:right">Borrar</button></div>`).join('')||'Sin clientes';}
+async function borrarAdmin(tipo,tel,id){let pass=localStorage.getItem('adminToken');if(!confirm('¿Borrar?')) return;await fetch('/api/admin/borrar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pass,tipo:tipo,tel:tel,id:id})});cargarAdmin();}
+(function(){let r=localStorage.getItem('rol_AGL'); let ca=JSON.parse(localStorage.getItem('clienteActual')||'null'); let ch=JSON.parse(localStorage.getItem('choferActual')||'null'); let at=localStorage.getItem('adminToken');if(ch && (r==='chofer' || !r)){document.getElementById('modal-rol').style.display='none';document.getElementById('vista-chofer').style.display='block';verificarSesionChofer();}else if(at && r==='admin'){document.getElementById('modal-rol').style.display='none';document.getElementById('vista-admin').style.display='block';document.getElementById('admin-login').style.display='none';document.getElementById('admin-panel').style.display='block';cargarAdmin();}else if(ca){localStorage.setItem('rol_AGL','cliente');document.getElementById('modal-rol').style.display='none';document.getElementById('vista-cliente').style.display='block';verificarSesionCliente();}else if(r==='cliente'){document.getElementById('modal-rol').style.display='none';document.getElementById('vista-cliente').style.display='block';verificarSesionCliente();}})();
 </script></body></html>
 """
 @app.route("/")
 def index(): return render_template_string(HTML)
 @app.route("/api/viaje", methods=["POST"])
-def api_viaje():
-    data=request.json; viajes.append(data); guardar(); return jsonify({"ok":True})
+def api_viaje(): data=request.json; viajes.append(data); guardar(); return jsonify({"ok":True})
 @app.route("/api/chofer/heartbeat", methods=["POST"])
-def heartbeat():
-    d=request.json; ubicaciones[d['tel']]={'lat':d['lat'],'lng':d['lng'],'ts':time.time()}; guardar(); return jsonify({"ok":True})
+def heartbeat(): d=request.json; ubicaciones[d['tel']]={'lat':d['lat'],'lng':d['lng'],'ts':time.time()}; guardar(); return jsonify({"ok":True})
 @app.route("/api/viajes_cercanos")
 def viajes_cercanos():
-    lat=float(request.args.get('lat',21.8853)); lng=float(request.args.get('lng',-102.2916))
-    result=[]
+    lat=float(request.args.get('lat',21.8853)); lng=float(request.args.get('lng',-102.2916)); result=[]
     for v in viajes:
         if v.get('status')!='pendiente': continue
         if not v.get('origen_lat'): continue
@@ -399,32 +285,24 @@ def viajes_cercanos():
             vc=dict(v); vc['dist_km']=round(d,1); result.append(vc)
     return jsonify(sorted(result, key=lambda x: x['dist_km']))
 @app.route("/api/chofer/registrar", methods=["POST"])
-def chofer_reg():
-    d=request.json
+def chofer_reg(): d=request.json; 
     if any(c['tel']==d['tel'] for c in choferes_db): return jsonify({"ok":False,"error":"Ya registrado"})
     choferes_db.append(d); guardar(); return jsonify({"ok":True,"chofer":d})
 @app.route("/api/chofer/login", methods=["POST"])
-def chofer_login():
-    d=request.json; f=next((c for c in choferes_db if c['tel']==d['tel'] and c['pass']==d['pass']),None)
-    return jsonify({"ok":True,"chofer":f}) if f else jsonify({"ok":False,"error":"Pass mal"})
+def chofer_login(): d=request.json; f=next((c for c in choferes_db if c['tel']==d['tel'] and c['pass']==d['pass']),None); return jsonify({"ok":True,"chofer":f}) if f else jsonify({"ok":False,"error":"Pass mal"})
 @app.route("/api/cliente/registrar", methods=["POST"])
-def cli_reg():
-    d=request.json
+def cli_reg(): d=request.json; 
     if any(c['tel']==d['tel'] for c in clientes_db): return jsonify({"ok":False,"error":"Ya registrado"})
     clientes_db.append(d); guardar(); return jsonify({"ok":True,"cliente":d})
 @app.route("/api/cliente/login", methods=["POST"])
-def cli_login():
-    d=request.json; f=next((c for c in clientes_db if c['tel']==d['tel'] and c['pass']==d['pass']),None)
-    return jsonify({"ok":True,"cliente":f}) if f else jsonify({"ok":False,"error":"Cel o pass mal"})
+def cli_login(): d=request.json; f=next((c for c in clientes_db if c['tel']==d['tel'] and c['pass']==d['pass']),None); return jsonify({"ok":True,"cliente":f}) if f else jsonify({"ok":False,"error":"Cel o pass mal"})
 @app.route("/api/viaje/tomar", methods=["POST"])
-def tomar():
-    data = request.json
+def tomar(): data=request.json; 
     for v in viajes:
-        if v['id']==data['id']: 
-            v['status']='tomado'; v['chofer_tel']=data.get('chofer_tel'); v['chofer_nombre']=data.get('chofer_nombre'); v['chofer_placas']=data.get('chofer_placas'); v['chofer_modelo']=data.get('chofer_modelo'); v['tomado_en']=time.strftime("%Y-%m-%d %H:%M:%S"); guardar(); return jsonify({"ok":True, "viaje":v})
+        if v['id']==data['id']: v['status']='tomado'; v['chofer_tel']=data.get('chofer_tel'); v['chofer_nombre']=data.get('chofer_nombre'); v['chofer_placas']=data.get('chofer_placas'); v['chofer_modelo']=data.get('chofer_modelo'); guardar(); return jsonify({"ok":True, "viaje":v})
     return jsonify({"ok":False})
 @app.route("/api/viaje/finalizar", methods=["POST"])
-def finalizar():
+def finalizar(): 
     for v in viajes:
         if v['id']==request.json['id']: v['status']='finalizado'; guardar(); return jsonify({"ok":True})
     return jsonify({"ok":False})
@@ -441,11 +319,11 @@ def admin_data():
     return jsonify({"ok":True,"choferes":choferes_db,"viajes":viajes, "clientes":clientes_db})
 @app.route("/api/admin/borrar", methods=["POST"])
 def admin_borrar():
-    data = request.json
+    data=request.json
     if data.get('password')!=ADMIN_PASSWORD: return jsonify({"ok":False})
-    tipo = data.get('tipo'); tel = data.get('tel'); id_viaje = data.get('id')
-    if tipo == 'chofer': choferes_db[:] = [c for c in choferes_db if c['tel'] != tel]
-    elif tipo == 'cliente': clientes_db[:] = [c for c in clientes_db if c['tel'] != tel]
-    elif tipo == 'viaje': viajes[:] = [v for v in viajes if v['id'] != id_viaje]
+    tipo=data.get('tipo'); tel=data.get('tel'); id_viaje=data.get('id')
+    if tipo=='chofer': choferes_db[:] = [c for c in choferes_db if c['tel'] != tel]
+    elif tipo=='cliente': clientes_db[:] = [c for c in clientes_db if c['tel'] != tel]
+    elif tipo=='viaje': viajes[:] = [v for v in viajes if v['id'] != id_viaje]
     guardar(); return jsonify({"ok":True})
 if __name__=="__main__": app.run(host="0.0.0.0", port=int(os.environ.get("PORT",5000)))
