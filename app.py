@@ -6,6 +6,9 @@ viajes, choferes_db, clientes_db, ubicaciones = [], [], [], {}
 def cargar():
   global viajes, choferes_db, clientes_db, ubicaciones
   try:
+    for arch in ["viajes.json","choferes_db.json","clientes_db.json","ubicaciones.json"]:
+        if not os.path.exists(arch):
+            with open(arch,"w") as f: f.write("[]" if "viajes" in arch or "choferes" in arch or "clientes" in arch else "{}")
     if os.path.exists("viajes.json"):
       with open("viajes.json") as f: viajes[:] = json.load(f)
     if os.path.exists("choferes_db.json"):
@@ -21,7 +24,7 @@ def guardar():
     with open("choferes_db.json","w") as f: json.dump(choferes_db,f)
     with open("clientes_db.json","w") as f: json.dump(clientes_db,f)    
     with open("ubicaciones.json","w") as f: json.dump(ubicaciones,f)
-  except Exception as e: print("Error guardar:", e)
+  except: pass
 cargar()
 def haversine(lat1,lon1,lat2,lon2):
     R=6371; dLat=math.radians(lat2-lat1); dLon=math.radians(lon2-lon1)
@@ -29,13 +32,13 @@ def haversine(lat1,lon1,lat2,lon2):
     return R*2*math.atan2(math.sqrt(a),math.sqrt(1-a))
 
 HTML = """<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>AGL V44 - 6 AÑOS + RADAR</title>
+<title>AGL V45 - FINAL</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
 #alerta-radar{position:fixed;top:0;left:0;right:0;z-index:99999;background:#00c853;color:#fff;padding:16px;text-align:center;font-weight:900;display:none;font-size:15px;animation:parpadeo 1s infinite}
 @keyframes parpadeo{0%,100%{background:#00c853}50%{background:#009940}}
-*{box-sizing:border-box;margin:0;padding:0;font-family:Arial}body{height:100vh;overflow:hidden;background:#fff}
+*{box-sizing:border-box;margin:0;padding:0;font-family:Arial}body{height:100vh;overflow:hidden;background:#f6f7f9}
 #map{position:fixed!important;top:0;left:0;width:100%;height:100vh!important;z-index:1}
 .top-bar{position:fixed;top:12px;left:12px;right:12px;z-index:10;display:flex;gap:8px;max-width:420px}
 .menu-btn{width:46px;height:46px;background:#fff;border:none;border-radius:14px;box-shadow:0 4px 18px rgba(0,0,0,.28);font-size:22px}
@@ -50,16 +53,16 @@ input{flex:1;border:none;outline:none;font-size:13px;font-weight:600;background:
 .parada-extra{display:none}
 #cotizacion{position:fixed;bottom:82px;left:12px;right:12px;z-index:11;background:#fff;border-radius:16px;padding:12px 16px;display:none;box-shadow:0 8px 28px rgba(0,0,0,.32);max-width:420px;margin:auto;text-align:center}
 .btn-confirm{position:fixed;bottom:12px;left:12px;right:12px;z-index:11;background:#000;color:#fff;font-weight:800;padding:16px;border:none;border-radius:16px;max-width:420px;margin:auto;display:none;font-size:15px}
-#modal-rol{position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.92);display:flex;align-items:center;justify-content:center;padding:20px}.box-rol{background:#fff;border-radius:20px;padding:24px;width:100%;max-width:360px;text-align:center}
+#modal-rol{position:fixed;inset:0;z-index:99999;background:#f6f7f9;display:flex;align-items:center;justify-content:center;padding:16px}.box-rol{background:#fff;border-radius:18px;padding:18px 16px;width:100%;max-width:320px;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.15)}
 .inp{width:100%;padding:13px;margin:7px 0;border-radius:10px;border:1px solid #ddd;background:#f9f9f9}
 </style></head><body>
 <div id="alerta-radar">🚨 VIAJE CERCA! <span id="radar-txt"></span></div>
 <audio id="beep" src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg"></audio>
 
-<div id="modal-rol"><div class="box-rol"><h2>🚕 AGL Transporte</h2><p style="margin:8px 0 16px;color:#666;font-size:11px">V44 - MIN 6 AÑOS + BANDERAZO $40</p>
-<button type="button" onclick="elegirRol('cliente')" style="width:100%;padding:16px;border:none;border-radius:14px;font-weight:800;margin-bottom:10px;background:#000;color:#fff">👤 SOY CLIENTE</button>
-<button type="button" onclick="elegirRol('chofer')" style="width:100%;padding:16px;border:none;border-radius:14px;font-weight:800;margin-bottom:10px;background:#00c853;color:#fff">🚗 SOY CHOFER</button>
-<button type="button" onclick="elegirRol('admin')" style="width:100%;padding:16px;border:none;border-radius:14px;font-weight:800;background:#0a3552;color:#fff">🔐 SOY ADMIN</button></div></div>
+<div id="modal-rol"><div class="box-rol"><h2>🚕 AGL Transporte</h2><p style="margin:8px 0 14px;color:#666;font-size:11px">V45 - MIN 6 AÑOS + BANDERAZO $40</p>
+<button type="button" onclick="elegirRol('cliente')" style="width:100%;padding:13px;border:none;border-radius:12px;font-weight:800;margin-bottom:8px;background:#000;color:#fff">👤 SOY CLIENTE</button>
+<button type="button" onclick="elegirRol('chofer')" style="width:100%;padding:13px;border:none;border-radius:12px;font-weight:800;margin-bottom:8px;background:#00c853;color:#fff">🚗 SOY CHOFER</button>
+<button type="button" onclick="elegirRol('admin')" style="width:100%;padding:13px;border:none;border-radius:12px;font-weight:800;background:#0a3552;color:#fff">🔐 SOY ADMIN</button></div></div>
 
 <div id="vista-cliente" style="display:none">
 <div id="box-login-cliente" style="padding:20px;max-width:400px;margin:70px auto 0;background:#fff;position:relative;z-index:20;border-radius:16px"><h2 style="text-align:center">👤 Cliente</h2><div id="form-login-c"><input id="cli-tel" class="inp" placeholder="Celular"><input id="cli-pass" class="inp" type="password" placeholder="Contraseña"><button onclick="clienteLogin()" style="width:100%;padding:13px;background:#000;color:#fff;border:none;border-radius:10px">ENTRAR</button><p style="text-align:center;margin:10px 0">¿Nuevo?</p><button onclick="mostrarRegistroCli()" style="width:100%;padding:11px;background:#fff;border:1px solid #000;border-radius:10px">REGISTRARME</button><button onclick="volverAlInicio()" style="width:100%;margin-top:10px;padding:11px;background:#eee;border:none;border-radius:10px">⬅ MENU</button><p id="msg-cli" style="color:red;text-align:center;font-size:12px"></p></div><div id="form-registro-c" style="display:none"><input id="cli-reg-nombre" class="inp" placeholder="Nombre"><input id="cli-reg-tel" class="inp" placeholder="Celular"><input id="cli-reg-pass" class="inp" type="password" placeholder="Contraseña"><button onclick="clienteRegistrar()" style="width:100%;padding:13px;background:#00c853;color:#fff;border:none;border-radius:10px">CREAR CUENTA</button><button onclick="mostrarLoginCli()" style="width:100%;padding:10px;background:none;border:none;color:#1976d2">Ya tengo cuenta</button></div></div>
@@ -94,7 +97,7 @@ input{flex:1;border:none;outline:none;font-size:13px;font-weight:600;background:
 <button onclick="mostrarLoginChofer()" style="width:100%;padding:10px;background:none;border:none;color:#1976d2">Ya tengo cuenta</button>
 </div></div><div id="box-viajes-chofer" style="display:none"><div style="background:#000;color:#fff;padding:12px;display:flex;justify-content:space-between"><span id="nombre-chofer-log">Chofer</span><button onclick="choferLogout()" style="background:#ff5252;color:#fff;border:none;padding:6px 10px;border-radius:6px">Salir</button></div><div style="padding:10px"><div id="lista-viajes-chofer"></div></div></div></div>
 
-<div id="vista-admin" style="display:none"><div id="admin-login" style="padding:20px;max-width:400px;margin:80px auto;background:#fff;border-radius:16px"><h2 style="text-align:center">🔐 ADMIN</h2><input id="admin-pass-input" type="password" class="inp" placeholder="AGL2026"><button onclick="adminLogin()" style="width:100%;padding:14px;background:#000;color:#fff;border:none;border-radius:10px">ENTRAR</button><button onclick="volverAlInicio()" style="width:100%;margin-top:10px;padding:12px;background:#eee;border:none;border-radius:12px">⬅ VOLVER</button></div><div id="admin-panel" style="display:none;padding:12px;background:#eef2f7;min-height:100vh"><h1>🔐 ADMIN V44</h1><div style="display:flex;gap:6px;margin:12px 0"><button onclick="adminTab('viajes')" id="btn-viajes" style="flex:1;padding:12px;background:#000;color:#fff;border:none;border-radius:10px;font-weight:800">Viajes</button><button onclick="adminTab('choferes')" id="btn-choferes" style="flex:1;padding:12px;background:#fff;border:1px solid #000;border-radius:10px;font-weight:800">Choferes</button><button onclick="adminTab('clientes')" id="btn-clientes" style="flex:1;padding:12px;background:#fff;border:1px solid #000;border-radius:10px;font-weight:800">Clientes</button></div><div id="admin-viajes"></div><div id="admin-choferes" style="display:none"></div><div id="admin-clientes" style="display:none"></div><button onclick="volverAlInicio()" style="margin-top:12px;padding:12px;width:100%;background:#000;color:#fff;border:none;border-radius:10px">Volver</button></div></div>
+<div id="vista-admin" style="display:none"><div id="admin-login" style="padding:20px;max-width:400px;margin:80px auto;background:#fff;border-radius:16px"><h2 style="text-align:center">🔐 ADMIN</h2><input id="admin-pass-input" type="password" class="inp" placeholder="AGL2026"><button onclick="adminLogin()" style="width:100%;padding:14px;background:#000;color:#fff;border:none;border-radius:10px">ENTRAR</button><button onclick="volverAlInicio()" style="width:100%;margin-top:10px;padding:12px;background:#eee;border:none;border-radius:12px">⬅ VOLVER</button></div><div id="admin-panel" style="display:none;padding:12px;background:#eef2f7;min-height:100vh"><h1>🔐 ADMIN V45</h1><div style="display:flex;gap:6px;margin:12px 0"><button onclick="adminTab('viajes')" id="btn-viajes" style="flex:1;padding:12px;background:#000;color:#fff;border:none;border-radius:10px;font-weight:800">Viajes</button><button onclick="adminTab('choferes')" id="btn-choferes" style="flex:1;padding:12px;background:#fff;border:1px solid #000;border-radius:10px;font-weight:800">Choferes</button><button onclick="adminTab('clientes')" id="btn-clientes" style="flex:1;padding:12px;background:#fff;border:1px solid #000;border-radius:10px;font-weight:800">Clientes</button></div><div id="admin-viajes"></div><div id="admin-choferes" style="display:none"></div><div id="admin-clientes" style="display:none"></div><button onclick="volverAlInicio()" style="margin-top:12px;padding:12px;width:100%;background:#000;color:#fff;border:none;border-radius:10px">Volver</button></div></div>
 
 <script>
 let map=null,origenMarker=null,destinoMarker=null,parada1Marker=null,parada2Marker=null,parada3Marker=null,routeLine,kmActual=0,precioActual=0,tiempoActual=0,numParadasVisibles=0,miChofer=null,miPos={lat:21.8853,lng:-102.2916},origenLatLng=null,destinoLatLng=null;
@@ -151,7 +154,7 @@ function trazarLocal(){
     kmActual=Math.round(dist*10)/10; if(kmActual<0.8)kmActual=0.8;
     precioActual=calcularPrecio(kmActual); tiempoActual=Math.round(kmActual*3.2);
     document.getElementById('cotizacion').style.display='block';
-    document.getElementById('dist').innerText=kmActual+' km - '+tiempoActual+' min para el cliente';
+    document.getElementById('dist').innerText=kmActual+' km - '+tiempoActual+' min';
     document.getElementById('precio').innerText='$'+precioActual+' MXN';
     document.getElementById('btnPedir').innerText='Confirmar Flete $'+precioActual+' - '+kmActual+'km';
     document.getElementById('btnPedir').style.display='block';
@@ -168,7 +171,7 @@ async function trazarRutaReal(pts){
       precioActual=calcularPrecio(kmActual);
       if(routeLine) map.removeLayer(routeLine);
       routeLine=L.polyline(route.geometry.coordinates.map(c=>[c[1],c[0]]),{color:'#276EF1',weight:6}).addTo(map);
-      document.getElementById('dist').innerText=kmActual+' km - '+tiempoActual+' min para el cliente';
+      document.getElementById('dist').innerText=kmActual+' km - '+tiempoActual+' min';
       document.getElementById('precio').innerText='$'+precioActual+' MXN';
       document.getElementById('btnPedir').innerText='Confirmar Flete $'+precioActual+' - '+kmActual+'km';
       map.fitBounds(routeLine.getBounds(),{padding:[80,80]});
@@ -188,7 +191,6 @@ async function pedir(){
   await fetch('/api/viaje',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
   localStorage.setItem('viajeActualId', id);
   alert('✅ Flete CONFIRMADO '+fecha+' '+hora+' $'+precioActual);
-  // Ahora muestra seguimiento para cliente
   if(intervaloCliente) clearInterval(intervaloCliente);
   intervaloCliente = setInterval(()=>verEstadoMiViaje(id), 4000);
   verEstadoMiViaje(id);
@@ -196,31 +198,18 @@ async function pedir(){
 function borrarTodo(){document.getElementById('origen').value="";document.getElementById('destino').value="";document.getElementById('parada1').value="";document.getElementById('parada2').value="";document.getElementById('parada3').value="";document.getElementById('cotizacion').style.display="none";document.getElementById('btnPedir').style.display="none";if(origenMarker){map.removeLayer(origenMarker);origenMarker=null;}if(destinoMarker){map.removeLayer(destinoMarker);destinoMarker=null;}if(parada1Marker){map.removeLayer(parada1Marker);parada1Marker=null;}if(parada2Marker){map.removeLayer(parada2Marker);parada2Marker=null;}if(parada3Marker){map.removeLayer(parada3Marker);parada3Marker=null;}if(routeLine){map.removeLayer(routeLine);routeLine=null;}precioActual=0; kmActual=0; origenLatLng=null; destinoLatLng=null; numParadasVisibles=0;document.getElementById('boxP1').style.display='none';document.getElementById('boxP2').style.display='none';document.getElementById('boxP3').style.display='none';document.getElementById('txt-paradas').innerText='0 / 3';}
 function mostrarRegistroChofer(){document.getElementById('form-login').style.display='none';document.getElementById('form-registro').style.display='block';}
 function mostrarLoginChofer(){document.getElementById('form-registro').style.display='none';document.getElementById('form-login').style.display='block';}
-
 async function choferRegistrar(){
-  let n=document.getElementById('reg-nombre').value.trim(),
-      t=document.getElementById('reg-tel').value.trim(),
-      pl=document.getElementById('reg-placas').value.trim().toUpperCase(),
-      mo=document.getElementById('reg-modelo').value.trim(),
-      p=document.getElementById('reg-pass').value.trim();
-  if(!n||!t||!pl||!mo||!p){ alert('Llena todo: nombre, cel, placas y modelo con año'); return; }
+  let n=document.getElementById('reg-nombre').value.trim(), t=document.getElementById('reg-tel').value.trim(), pl=document.getElementById('reg-placas').value.trim().toUpperCase(), mo=document.getElementById('reg-modelo').value.trim(), p=document.getElementById('reg-pass').value.trim();
+  if(!n||!t||!pl||!mo||!p){ alert('Llena todo'); return; }
   let match = mo.match(/(19|20)\\d{2}/);
   if(!match){ alert('En modelo escribe el AÑO. Ej: Versa 2022 blanco'); return; }
-  let anio = parseInt(match[0]);
-  let anioActual = new Date().getFullYear();
-  let anioMinimo = anioActual - 6;
-  if(anio < anioMinimo){
-    alert('❌ No aceptamos coches con más de 6 años.\\nTu coche es '+anio+' y el mínimo es '+anioMinimo+'.\\nSolo '+anioMinimo+' en adelante.');
-    return;
-  }
-  if(anio > anioActual + 1){ alert('El año no puede ser mayor a '+(anioActual+1)); return; }
+  let anio = parseInt(match[0]); let anioActual = new Date().getFullYear(); let anioMinimo = anioActual - 6;
+  if(anio < anioMinimo){ alert('❌ No aceptamos coches con más de 6 años. Tu coche es '+anio+' y el mínimo es '+anioMinimo); return; }
+  if(anio > anioActual + 1){ alert('Año no valido'); return; }
   let res=await fetch('/api/chofer/registrar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nombre:n,tel:t,placas:pl,modelo:mo,anio:anio,pass:p})});
-  let d=await res.json();
-  if(!d.ok){alert(d.error);return;}
-  localStorage.setItem('choferActual',JSON.stringify(d.chofer));
-  verificarSesionChofer();
+  let d=await res.json(); if(!d.ok){alert(d.error);return;}
+  localStorage.setItem('choferActual',JSON.stringify(d.chofer)); verificarSesionChofer();
 }
-
 async function choferLogin(){let t=document.getElementById('chofer-tel').value.trim(),c=document.getElementById('chofer-pass').value.trim();let res=await fetch('/api/chofer/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tel:t,pass:c})});let d=await res.json();if(!d.ok){document.getElementById('msg-chofer').innerText=d.error;return;}localStorage.setItem('choferActual',JSON.stringify(d.chofer));verificarSesionChofer();}
 let radarInterval=null, ultimoViajeId=null;
 function verificarSesionChofer(){
@@ -231,12 +220,7 @@ function verificarSesionChofer(){
     document.getElementById('box-viajes-chofer').style.display='block';
     document.getElementById('nombre-chofer-log').innerText=a.nombre;
     miChofer=a;
-    if(va){
-      viajeActivo=va;
-      mostrarViajeActivo(); // si ya tiene viaje, NO inicie radar
-    } else {
-      iniciarRadarAGL();
-    }
+    if(va){ viajeActivo=va; mostrarViajeActivo(); } else { iniciarRadarAGL(); }
   }else{
     document.getElementById('box-login-chofer').style.display='block';
     document.getElementById('box-viajes-chofer').style.display='none';
@@ -255,9 +239,7 @@ function iniciarRadarAGL(){
 }
 function mostrarViajesChofer(){
   let va = localStorage.getItem('viajeActivo');
-  if(va){ // si hay viaje activo, no sobreescribas
-    return;
-  }
+  if(va){ return; }
   fetch('/api/viajes_cercanos?lat='+miPos.lat+'&lng='+miPos.lng).then(r=>r.json()).then(data=>{
     let lista=document.getElementById('lista-viajes-chofer');
     let fil=data.filter(x=>x.status==='pendiente');
@@ -283,32 +265,23 @@ function verificarSesionClienteLogged(){
   document.getElementById('box-login-cliente').style.display='none';
   document.getElementById('box-cliente-viaje').style.display='block';
   setTimeout(()=>{if(map) map.invalidateSize();},400);
-
-  // --- AGREGA ESTO DESDE AQUÍ ---
   let idGuardado = localStorage.getItem('viajeActualId');
   if(idGuardado){
     if(intervaloCliente) clearInterval(intervaloCliente);
     intervaloCliente = setInterval(()=>verEstadoMiViaje(idGuardado), 4000);
     verEstadoMiViaje(idGuardado);
   }
-  // --- HASTA AQUÍ ---
 }
-
-// Y agrega también esta función nueva ABAJO de verificarSesionClienteLogged:
-
 async function verEstadoMiViaje(id){
   try{
     let r = await fetch('/api/viaje/estado/'+id);
     let v = await r.json();
     if(!v || !v.id) return;
-
     let cot = document.getElementById('cotizacion');
     cot.style.display='block';
-
     if(v.status === 'pendiente'){
       cot.innerHTML = `<b>🔍 BUSCANDO CHOFER...</b><br><span style="font-size:12px">${v.origen} → ${v.destino}</span><br>💰 $${v.precio}`;
     } else if(v.status === 'tomado' || v.status === 'en_curso'){
-      // TARJETA FIJA 
       cot.innerHTML = `
         <div style="background:#000;color:#fff;padding:12px;border-radius:12px;text-align:left">
           <b style="color:#00e676">✅ CHOFER EN CAMINO </b><br>
@@ -335,37 +308,25 @@ async function tomarViaje(id){
   localStorage.setItem('viajeActivo', JSON.stringify(viajeActivo));
   mostrarViajeActivo();
 }
-
 function mostrarViajeActivo(){
   let v = viajeActivo || JSON.parse(localStorage.getItem('viajeActivo')||'null');
   if(!v) return;
-document.getElementById('lista-viajes-chofer').innerHTML = `
-    <div style="background:#000;color:#fff;padding:8px 10px;border-radius:10px;margin-bottom:6px;font-size:12px;line-height:1.2">
-      <b>✅ ${v.cliente} - $${v.precio} | ${v.kms}km</b> | ${v.cliente_tel}
+  document.getElementById('lista-viajes-chofer').innerHTML = `
+    <div style="background:#000;color:#fff;padding:8px 10px;border-radius:10px;margin-bottom:6px;font-size:11px;line-height:1.2">
+      <b>✅ ${v.cliente} - $${v.precio} | ${v.kms}km</b> | ${v.cliente_tel}<br>📅 ${v.fecha} ${v.hora}
     </div>
-    <div style="background:#fff;padding:8px;border-radius:10px;border:1px solid #000">
-      <div style="font-size:11px;line-height:1.3"><b>O:</b> ${v.origen}<br><b>D:</b> ${v.destino}</div>
+    <div style="background:#fff;padding:8px;border-radius:10px;border:1px solid #ddd">
+      <div style="font-size:11px;line-height:1.25"><b>O:</b> ${v.origen}<br><b>D:</b> ${v.destino}</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px">
         <a href="https://www.google.com/maps/dir/?api=1&destination=${v.origen_lat},${v.origen_lng}" target="_blank" style="display:block;background:#276EF1;color:#fff;text-align:center;padding:8px;border-radius:8px;text-decoration:none;font-weight:800;font-size:11px">📍 ORIGEN</a>
-        <a href="https://www.google.com/maps/dir/?api=1&origin=${v.origen_lat},${v.origen_lng}&destination=${v.destino_lat},${v.destino_lng}" target="_blank" style="display:block;background:#000;color:#FFD700;border:1px solid #FFD700;text-align:center;padding:8px;border-radius:8px;text-decoration:none;font-weight:800;font-size:11px">🗺️ RECORRIDO</a>
+        <a href="https://www.google.com/maps/dir/${encodeURIComponent(v.origen)}/${encodeURIComponent(v.destino)}/" target="_blank" style="display:block;background:#000;color:#FFD700;border:1px solid #FFD700;text-align:center;padding:8px;border-radius:8px;text-decoration:none;font-weight:800;font-size:11px">🗺️ RECORRIDO</a>
+        <a href="https://waze.com/ul?ll=${v.origen_lat},${v.origen_lng}&navigate=yes" target="_blank" style="display:block;background:#00c853;color:#fff;text-align:center;padding:8px;border-radius:8px;text-decoration:none;font-weight:800;font-size:11px">🚗 WAZE</a>
         <a href="tel:${v.cliente_tel}" style="display:block;background:#fff;border:1px solid #000;color:#000;text-align:center;padding:8px;border-radius:8px;text-decoration:none;font-weight:800;font-size:11px">📞 LLAMAR</a>
-        <a href="https://wa.me/52${v.cliente_tel}" target="_blank" style="display:block;background:#25D366;color:#fff;text-align:center;padding:8px;border-radius:8px;text-decoration:none;font-weight:800;font-size:11px">💬 WHATSAPP</a>
       </div>
-      <button onclick="finalizarViaje()" style="width:100%;background:#ff3b30;color:#fff;border:none;padding:8px;border-radius:8px;font-weight:800;margin-top:6px;font-size:11px">🏁 FINALIZAR</button>
+      <a href="https://wa.me/52${v.cliente_tel}" target="_blank" style="display:block;background:#25D366;color:#fff;text-align:center;padding:8px;border-radius:8px;text-decoration:none;font-weight:800;font-size:11px;margin-top:6px">💬 WHATSAPP CLIENTE</a>
+      <button onclick="finalizarViaje()" style="width:100%;background:#ff3b30;color:#fff;border:none;padding:9px;border-radius:8px;font-weight:800;margin-top:6px;font-size:12px">🏁 FINALIZAR VIAJE</button>
     </div>
     <div id="map-chofer" style="height:280px;margin-top:6px;border-radius:10px"></div>
-  `;
-    <div style="background:#fff;padding:12px;border-radius:12px;border:2px solid #000">
-      <b>ORIGEN:</b><br>${v.origen}<br><br>
-      <b>DESTINO:</b><br>${v.destino}<br><br>
-      <a href="https://www.google.com/maps/dir/?api=1&destination=${v.origen_lat},${v.origen_lng}" target="_blank" style="display:block;background:#276EF1;color:#fff;text-align:center;padding:14px;border-radius:10px;text-decoration:none;font-weight:800;margin-bottom:8px">📍 IR A ORIGEN - GOOGLE MAPS</a>
-      <a href="https://www.google.com/maps/dir/${encodeURIComponent(v.origen)}/${encodeURIComponent(v.destino)}/" target="_blank" style="display:block;background:#000;color:#FFD700;border:2px solid #FFD700;text-align:center;padding:14px;border-radius:10px;text-decoration:none;font-weight:800;margin-bottom:8px">🗺️ VER RECORRIDO COMPLETO - ${v.kms}km</a>
-      <a href="https://waze.com/ul?ll=${v.origen_lat},${v.origen_lng}&navigate=yes" target="_blank" style="display:block;background:#00c853;color:#fff;text-align:center;padding:14px;border-radius:10px;text-decoration:none;font-weight:800;margin-bottom:8px">🚗 ABRIR EN WAZE</a>
-      <a href="tel:${v.cliente_tel}" style="display:block;background:#fff;border:2px solid #000;color:#000;text-align:center;padding:14px;border-radius:10px;text-decoration:none;font-weight:800;margin-bottom:8px">📞 LLAMAR CLIENTE</a>
-      <a href="https://wa.me/52${v.cliente_tel}" target="_blank" style="display:block;background:#25D366;color:#fff;text-align:center;padding:14px;border-radius:10px;text-decoration:none;font-weight:800;margin-bottom:10px">💬 WHATSAPP CLIENTE</a>
-      <button onclick="finalizarViaje()" style="width:100%;background:#ff3b30;color:#fff;border:none;padding:14px;border-radius:10px;font-weight:800">🏁 FINALIZAR VIAJE</button>
-    </div>
-    <div id="map-chofer" style="height:300px;margin-top:10px;border-radius:14px"></div>
   `;
   setTimeout(()=>{
     let mc = L.map('map-chofer').setView([v.origen_lat, v.origen_lng], 14);
@@ -374,7 +335,6 @@ document.getElementById('lista-viajes-chofer').innerHTML = `
     if(v.destino_lat) L.marker([v.destino_lat, v.destino_lng], {icon: rojoIcon}).addTo(mc).bindPopup("DESTINO");
   }, 300);
 }
-
 function finalizarViaje(){
   if(!confirm('¿Finalizar viaje?')) return;
   let v = JSON.parse(localStorage.getItem('viajeActivo'));
@@ -460,7 +420,6 @@ def cli_reg():
 def cli_login():
     d=request.json; f=next((c for c in clientes_db if c['tel']==d['tel'] and c['pass']==d['pass']),None)
     return jsonify({"ok":True,"cliente":f}) if f else jsonify({"ok":False,"error":"Cel o pass mal"})
-
 @app.route("/api/viaje/tomar", methods=["POST"])
 def tomar():
     data = request.json
@@ -481,7 +440,6 @@ def tomar():
             except: pass
             return jsonify({"ok":True, "viaje":v})
     return jsonify({"ok":False})
-
 @app.route("/api/viaje/finalizar", methods=["POST"])
 def finalizar():
     for v in viajes:
@@ -496,7 +454,6 @@ def estado_viaje(id_viaje):
         if v['id']==id_viaje:
             return jsonify(v)
     return jsonify({"ok":False})
-
 @app.route("/api/viajes_cliente")
 def viajes_cliente():
     tel = request.args.get('tel')
