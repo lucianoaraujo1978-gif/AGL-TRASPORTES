@@ -3,6 +3,7 @@ import json, os, math, time
 app = Flask(__name__)
 ADMIN_PASSWORD = "AGL2026"
 viajes, choferes_db, clientes_db, ubicaciones = [], [], [], {}
+
 def cargar():
   global viajes, choferes_db, clientes_db, ubicaciones
   try:
@@ -18,6 +19,7 @@ def cargar():
     if os.path.exists("ubicaciones.json"):
       with open("ubicaciones.json") as f: ubicaciones.update(json.load(f))
   except: pass
+
 def guardar():
   try:
     with open("viajes.json","w") as f: json.dump(viajes,f)  
@@ -25,19 +27,20 @@ def guardar():
     with open("clientes_db.json","w") as f: json.dump(clientes_db,f)    
     with open("ubicaciones.json","w") as f: json.dump(ubicaciones,f)
   except: pass
+
 cargar()
+
 def haversine(lat1,lon1,lat2,lon2):
     R=6371; dLat=math.radians(lat2-lat1); dLon=math.radians(lon2-lon1)
     a=math.sin(dLat/2)**2+math.cos(math.radians(lat1))*math.cos(math.radians(lat2))*math.sin(dLon/2)**2
     return R*2*math.atan2(math.sqrt(a),math.sqrt(1-a))
 
 HTML = """<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>AGL V45 - FINAL</title>
+<title>AGL V46 FINAL</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
-#alerta-radar{position:fixed;top:0;left:0;right:0;z-index:99999;background:#00c853;color:#fff;padding:16px;text-align:center;font-weight:900;display:none;font-size:15px;animation:parpadeo 1s infinite}
-@keyframes parpadeo{0%,100%{background:#00c853}50%{background:#009940}}
+#alerta-radar{position:fixed;top:0;left:0;right:0;z-index:99999;background:#00c853;color:#fff;padding:16px;text-align:center;font-weight:900;display:none}
 *{box-sizing:border-box;margin:0;padding:0;font-family:Arial}body{height:100vh;overflow:hidden;background:#f6f7f9}
 #map{position:fixed!important;top:0;left:0;width:100%;height:100vh!important;z-index:1}
 .top-bar{position:fixed;top:12px;left:12px;right:12px;z-index:10;display:flex;gap:8px;max-width:420px}
@@ -57,13 +60,10 @@ input{flex:1;border:none;outline:none;font-size:13px;font-weight:600;background:
 .inp{width:100%;padding:13px;margin:7px 0;border-radius:10px;border:1px solid #ddd;background:#f9f9f9}
 </style></head><body>
 <div id="alerta-radar">🚨 VIAJE CERCA! <span id="radar-txt"></span></div>
-<audio id="beep" src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg"></audio>
-
-<div id="modal-rol"><div class="box-rol"><h2>🚕 AGL Transporte</h2><p style="margin:8px 0 14px;color:#666;font-size:11px">V45 - MIN 6 AÑOS + BANDERAZO $40</p>
+<div id="modal-rol"><div class="box-rol"><h2>🚕 AGL Transporte</h2><p style="margin:8px 0 14px;color:#666;font-size:11px">V46 - MIN 6 AÑOS + $40</p>
 <button type="button" onclick="elegirRol('cliente')" style="width:100%;padding:13px;border:none;border-radius:12px;font-weight:800;margin-bottom:8px;background:#000;color:#fff">👤 SOY CLIENTE</button>
 <button type="button" onclick="elegirRol('chofer')" style="width:100%;padding:13px;border:none;border-radius:12px;font-weight:800;margin-bottom:8px;background:#00c853;color:#fff">🚗 SOY CHOFER</button>
 <button type="button" onclick="elegirRol('admin')" style="width:100%;padding:13px;border:none;border-radius:12px;font-weight:800;background:#0a3552;color:#fff">🔐 SOY ADMIN</button></div></div>
-
 <div id="vista-cliente" style="display:none">
 <div id="box-login-cliente" style="padding:20px;max-width:400px;margin:70px auto 0;background:#fff;position:relative;z-index:20;border-radius:16px"><h2 style="text-align:center">👤 Cliente</h2><div id="form-login-c"><input id="cli-tel" class="inp" placeholder="Celular"><input id="cli-pass" class="inp" type="password" placeholder="Contraseña"><button onclick="clienteLogin()" style="width:100%;padding:13px;background:#000;color:#fff;border:none;border-radius:10px">ENTRAR</button><p style="text-align:center;margin:10px 0">¿Nuevo?</p><button onclick="mostrarRegistroCli()" style="width:100%;padding:11px;background:#fff;border:1px solid #000;border-radius:10px">REGISTRARME</button><button onclick="volverAlInicio()" style="width:100%;margin-top:10px;padding:11px;background:#eee;border:none;border-radius:10px">⬅ MENU</button><p id="msg-cli" style="color:red;text-align:center;font-size:12px"></p></div><div id="form-registro-c" style="display:none"><input id="cli-reg-nombre" class="inp" placeholder="Nombre"><input id="cli-reg-tel" class="inp" placeholder="Celular"><input id="cli-reg-pass" class="inp" type="password" placeholder="Contraseña"><button onclick="clienteRegistrar()" style="width:100%;padding:13px;background:#00c853;color:#fff;border:none;border-radius:10px">CREAR CUENTA</button><button onclick="mostrarLoginCli()" style="width:100%;padding:10px;background:none;border:none;color:#1976d2">Ya tengo cuenta</button></div></div>
 <div id="box-cliente-viaje" style="display:none"><div id="map"></div><button onclick="miUbicacion()" style="position:fixed;bottom:160px;right:14px;z-index:12;width:50px;height:50px;background:#fff;border:none;border-radius:50%;box-shadow:0 4px 18px rgba(0,0,0,.3)">📍</button>
@@ -85,7 +85,6 @@ input{flex:1;border:none;outline:none;font-size:13px;font-weight:600;background:
 <div id="cotizacion"><div id="dist" style="font-size:13px;color:#333;font-weight:600"></div><b id="precio" style="font-size:26px;color:#000">$0 MXN</b></div>
 <button class="btn-confirm" id="btnPedir" onclick="pedir()">Confirmar Flete $0</button>
 </div></div>
-
 <div id="vista-chofer" style="display:none"><div id="box-login-chofer" style="padding:20px;max-width:400px;margin:20px auto;background:#fff;border-radius:16px"><h2 style="text-align:center">🚗 Chofer</h2><div id="form-login"><input id="chofer-tel" class="inp" placeholder="Celular"><input id="chofer-pass" class="inp" type="password" placeholder="Contraseña"><button onclick="choferLogin()" style="width:100%;padding:13px;background:#000;color:#fff;border:none;border-radius:10px">ENTRAR</button><button onclick="mostrarRegistroChofer()" style="width:100%;padding:11px;background:#fff;border:1px solid #000;border-radius:10px;margin-top:10px">REGISTRARME</button><button onclick="volverAlInicio()" style="width:100%;margin-top:10px;padding:11px;background:#eee;border:none;border-radius:10px">⬅ MENU</button><p id="msg-chofer" style="color:red;text-align:center;font-size:12px"></p></div>
 <div id="form-registro" style="display:none">
 <input id="reg-nombre" class="inp" placeholder="Nombre completo">
@@ -96,9 +95,7 @@ input{flex:1;border:none;outline:none;font-size:13px;font-weight:600;background:
 <button onclick="choferRegistrar()" style="width:100%;padding:13px;background:#00c853;color:#fff;border:none;border-radius:10px">CREAR CHOFER</button>
 <button onclick="mostrarLoginChofer()" style="width:100%;padding:10px;background:none;border:none;color:#1976d2">Ya tengo cuenta</button>
 </div></div><div id="box-viajes-chofer" style="display:none"><div style="background:#000;color:#fff;padding:12px;display:flex;justify-content:space-between"><span id="nombre-chofer-log">Chofer</span><button onclick="choferLogout()" style="background:#ff5252;color:#fff;border:none;padding:6px 10px;border-radius:6px">Salir</button></div><div style="padding:10px"><div id="lista-viajes-chofer"></div></div></div></div>
-
-<div id="vista-admin" style="display:none"><div id="admin-login" style="padding:20px;max-width:400px;margin:80px auto;background:#fff;border-radius:16px"><h2 style="text-align:center">🔐 ADMIN</h2><input id="admin-pass-input" type="password" class="inp" placeholder="AGL2026"><button onclick="adminLogin()" style="width:100%;padding:14px;background:#000;color:#fff;border:none;border-radius:10px">ENTRAR</button><button onclick="volverAlInicio()" style="width:100%;margin-top:10px;padding:12px;background:#eee;border:none;border-radius:12px">⬅ VOLVER</button></div><div id="admin-panel" style="display:none;padding:12px;background:#eef2f7;min-height:100vh"><h1>🔐 ADMIN V45</h1><div style="display:flex;gap:6px;margin:12px 0"><button onclick="adminTab('viajes')" id="btn-viajes" style="flex:1;padding:12px;background:#000;color:#fff;border:none;border-radius:10px;font-weight:800">Viajes</button><button onclick="adminTab('choferes')" id="btn-choferes" style="flex:1;padding:12px;background:#fff;border:1px solid #000;border-radius:10px;font-weight:800">Choferes</button><button onclick="adminTab('clientes')" id="btn-clientes" style="flex:1;padding:12px;background:#fff;border:1px solid #000;border-radius:10px;font-weight:800">Clientes</button></div><div id="admin-viajes"></div><div id="admin-choferes" style="display:none"></div><div id="admin-clientes" style="display:none"></div><button onclick="volverAlInicio()" style="margin-top:12px;padding:12px;width:100%;background:#000;color:#fff;border:none;border-radius:10px">Volver</button></div></div>
-
+<div id="vista-admin" style="display:none"><div id="admin-login" style="padding:20px;max-width:400px;margin:80px auto;background:#fff;border-radius:16px"><h2 style="text-align:center">🔐 ADMIN</h2><input id="admin-pass-input" type="password" class="inp" placeholder="AGL2026"><button onclick="adminLogin()" style="width:100%;padding:14px;background:#000;color:#fff;border:none;border-radius:10px">ENTRAR</button><button onclick="volverAlInicio()" style="width:100%;margin-top:10px;padding:12px;background:#eee;border:none;border-radius:12px">⬅ VOLVER</button></div><div id="admin-panel" style="display:none;padding:12px;background:#eef2f7;min-height:100vh"><h1>🔐 ADMIN V46</h1><div style="display:flex;gap:6px;margin:12px 0"><button onclick="adminTab('viajes')" id="btn-viajes" style="flex:1;padding:12px;background:#000;color:#fff;border:none;border-radius:10px;font-weight:800">Viajes</button><button onclick="adminTab('choferes')" id="btn-choferes" style="flex:1;padding:12px;background:#fff;border:1px solid #000;border-radius:10px;font-weight:800">Choferes</button><button onclick="adminTab('clientes')" id="btn-clientes" style="flex:1;padding:12px;background:#fff;border:1px solid #000;border-radius:10px;font-weight:800">Clientes</button></div><div id="admin-viajes"></div><div id="admin-choferes" style="display:none"></div><div id="admin-clientes" style="display:none"></div><button onclick="volverAlInicio()" style="margin-top:12px;padding:12px;width:100%;background:#000;color:#fff;border:none;border-radius:10px">Volver</button></div></div>
 <script>
 let map=null,origenMarker=null,destinoMarker=null,parada1Marker=null,parada2Marker=null,parada3Marker=null,routeLine,kmActual=0,precioActual=0,tiempoActual=0,numParadasVisibles=0,miChofer=null,miPos={lat:21.8853,lng:-102.2916},origenLatLng=null,destinoLatLng=null;
 function toggleMenu(){document.getElementById('menu').classList.toggle('act');document.getElementById('overlay').classList.toggle('act');}
@@ -201,11 +198,10 @@ function mostrarLoginChofer(){document.getElementById('form-registro').style.dis
 async function choferRegistrar(){
   let n=document.getElementById('reg-nombre').value.trim(), t=document.getElementById('reg-tel').value.trim(), pl=document.getElementById('reg-placas').value.trim().toUpperCase(), mo=document.getElementById('reg-modelo').value.trim(), p=document.getElementById('reg-pass').value.trim();
   if(!n||!t||!pl||!mo||!p){ alert('Llena todo'); return; }
-  let match = mo.match(/(19|20)\\d{2}/);
+  let match = mo.match(/(19|20)[0-9]{2}/);
   if(!match){ alert('En modelo escribe el AÑO. Ej: Versa 2022 blanco'); return; }
   let anio = parseInt(match[0]); let anioActual = new Date().getFullYear(); let anioMinimo = anioActual - 6;
   if(anio < anioMinimo){ alert('❌ No aceptamos coches con más de 6 años. Tu coche es '+anio+' y el mínimo es '+anioMinimo); return; }
-  if(anio > anioActual + 1){ alert('Año no valido'); return; }
   let res=await fetch('/api/chofer/registrar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nombre:n,tel:t,placas:pl,modelo:mo,anio:anio,pass:p})});
   let d=await res.json(); if(!d.ok){alert(d.error);return;}
   localStorage.setItem('choferActual',JSON.stringify(d.chofer)); verificarSesionChofer();
@@ -247,8 +243,6 @@ function mostrarViajesChofer(){
       ultimoViajeId=fil[0].id;
       document.getElementById('radar-txt').innerText=fil[0].dist_km+'km - $'+fil[0].precio;
       document.getElementById('alerta-radar').style.display='block';
-      try{ document.getElementById('beep').play(); }catch(e){}
-      if(navigator.vibrate) navigator.vibrate([300,100,300]);
       setTimeout(()=>{ document.getElementById('alerta-radar').style.display='none'; }, 6000);
     }
     lista.innerHTML=fil.map(x=>`<div style="border:2px solid #00c853;border-radius:12px;padding:12px;margin:8px 0;background:#f0fff4"><b>📍 A ${x.dist_km}km - $${x.precio}</b><br>${x.cliente} | ${x.kms}km<br>📅 ${x.fecha} ${x.hora}<br><span style="font-size:11px">${x.origen}<br>→ ${x.destino}</span><br><button onclick="tomarViaje('${x.id}')" style="background:#000;color:#fff;border:none;padding:12px;width:100%;border-radius:10px;margin-top:8px;font-weight:800">TOMAR $${x.precio}</button></div>`).join('')||'<div style="padding:30px;text-align:center;color:#888">🔍 Radar AGL activo<br>Buscando viajes en 15km...<br><br>Tu pos: '+miPos.lat.toFixed(4)+'</div>';
@@ -282,14 +276,7 @@ async function verEstadoMiViaje(id){
     if(v.status === 'pendiente'){
       cot.innerHTML = `<b>🔍 BUSCANDO CHOFER...</b><br><span style="font-size:12px">${v.origen} → ${v.destino}</span><br>💰 $${v.precio}`;
     } else if(v.status === 'tomado' || v.status === 'en_curso'){
-      cot.innerHTML = `
-        <div style="background:#000;color:#fff;padding:12px;border-radius:12px;text-align:left">
-          <b style="color:#00e676">✅ CHOFER EN CAMINO </b><br>
-          <b>Chofer: ${v.chofer_nombre}</b><br>
-          🚗 ${v.chofer_modelo}<br>
-          🔖 PLACA: <b style="font-size:20px;letter-spacing:1px">${v.chofer_placas}</b><br>
-          <a href="tel:${v.chofer_tel}" style="display:block;background:#fff;color:#000;padding:10px;border-radius:8px;margin-top:8px;text-align:center;text-decoration:none;font-weight:800">📞 LLAMAR CHOFER ${v.chofer_tel}</a>
-        </div>`;
+      cot.innerHTML = `<div style="background:#000;color:#fff;padding:12px;border-radius:12px;text-align:left"><b style="color:#00e676">✅ CHOFER EN CAMINO </b><br><b>Chofer: ${v.chofer_nombre}</b><br>🚗 ${v.chofer_modelo}<br>🔖 PLACA: <b style="font-size:20px;letter-spacing:1px">${v.chofer_placas}</b><br><a href="tel:${v.chofer_tel}" style="display:block;background:#fff;color:#000;padding:10px;border-radius:8px;margin-top:8px;text-align:center;text-decoration:none;font-weight:800">📞 LLAMAR CHOFER ${v.chofer_tel}</a></div>`;
     } else if(v.status === 'finalizado'){
       clearInterval(intervaloCliente);
       localStorage.removeItem('viajeActualId');
@@ -312,18 +299,18 @@ function mostrarViajeActivo(){
   let v = viajeActivo || JSON.parse(localStorage.getItem('viajeActivo')||'null');
   if(!v) return;
   document.getElementById('lista-viajes-chofer').innerHTML = `
-    <div style="background:#000;color:#fff;padding:8px 10px;border-radius:10px;margin-bottom:6px;font-size:11px;line-height:1.2">
+    <div style="background:#000;color:#fff;padding:8px 10px;border-radius:10px;margin-bottom:6px;font-size:11px">
       <b>✅ ${v.cliente} - $${v.precio} | ${v.kms}km</b> | ${v.cliente_tel}<br>📅 ${v.fecha} ${v.hora}
     </div>
     <div style="background:#fff;padding:8px;border-radius:10px;border:1px solid #ddd">
-      <div style="font-size:11px;line-height:1.25"><b>O:</b> ${v.origen}<br><b>D:</b> ${v.destino}</div>
+      <div style="font-size:11px"><b>O:</b> ${v.origen}<br><b>D:</b> ${v.destino}</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px">
         <a href="https://www.google.com/maps/dir/?api=1&destination=${v.origen_lat},${v.origen_lng}" target="_blank" style="display:block;background:#276EF1;color:#fff;text-align:center;padding:8px;border-radius:8px;text-decoration:none;font-weight:800;font-size:11px">📍 ORIGEN</a>
         <a href="https://www.google.com/maps/dir/${encodeURIComponent(v.origen)}/${encodeURIComponent(v.destino)}/" target="_blank" style="display:block;background:#000;color:#FFD700;border:1px solid #FFD700;text-align:center;padding:8px;border-radius:8px;text-decoration:none;font-weight:800;font-size:11px">🗺️ RECORRIDO</a>
         <a href="https://waze.com/ul?ll=${v.origen_lat},${v.origen_lng}&navigate=yes" target="_blank" style="display:block;background:#00c853;color:#fff;text-align:center;padding:8px;border-radius:8px;text-decoration:none;font-weight:800;font-size:11px">🚗 WAZE</a>
         <a href="tel:${v.cliente_tel}" style="display:block;background:#fff;border:1px solid #000;color:#000;text-align:center;padding:8px;border-radius:8px;text-decoration:none;font-weight:800;font-size:11px">📞 LLAMAR</a>
       </div>
-      <a href="https://wa.me/52${v.cliente_tel}" target="_blank" style="display:block;background:#25D366;color:#fff;text-align:center;padding:8px;border-radius:8px;text-decoration:none;font-weight:800;font-size:11px;margin-top:6px">💬 WHATSAPP CLIENTE</a>
+      <a href="https://wa.me/52${v.cliente_tel}" target="_blank" style="display:block;background:#25D366;color:#fff;text-align:center;padding:8px;border-radius:8px;text-decoration:none;font-weight:800;font-size:11px;margin-top:6px">💬 WHATSAPP</a>
       <button onclick="finalizarViaje()" style="width:100%;background:#ff3b30;color:#fff;border:none;padding:9px;border-radius:8px;font-weight:800;margin-top:6px;font-size:12px">🏁 FINALIZAR VIAJE</button>
     </div>
     <div id="map-chofer" style="height:280px;margin-top:6px;border-radius:10px"></div>
@@ -387,10 +374,7 @@ def api_viaje():
     data=request.json; viajes.append(data); guardar(); return jsonify({"ok":True})
 @app.route("/api/chofer/heartbeat", methods=["POST"])
 def heartbeat():
-    d=request.json
-    ubicaciones[d['tel']]={'lat':d['lat'],'lng':d['lng'],'ts':time.time()}
-    guardar()
-    return jsonify({"ok":True})
+    d=request.json; ubicaciones[d['tel']]={'lat':d['lat'],'lng':d['lng'],'ts':time.time()}; guardar(); return jsonify({"ok":True})
 @app.route("/api/viajes_cercanos")
 def viajes_cercanos():
     lat=float(request.args.get('lat',21.8853)); lng=float(request.args.get('lng',-102.2916))
@@ -425,40 +409,18 @@ def tomar():
     data = request.json
     for v in viajes:
         if v['id']==data['id']: 
-            v['status']='tomado'
-            v['chofer_tel']=data.get('chofer_tel')
-            v['chofer_nombre']=data.get('chofer_nombre')
-            v['chofer_placas']=data.get('chofer_placas')
-            v['chofer_modelo']=data.get('chofer_modelo')
-            v['tomado_en']=time.strftime("%Y-%m-%d %H:%M:%S")
-            guardar()
-            try:
-                import requests
-                SHEET_URL = os.environ.get("SHEET_URL", "") 
-                if SHEET_URL:
-                    requests.post(SHEET_URL, json=v, timeout=3)
-            except: pass
-            return jsonify({"ok":True, "viaje":v})
+            v['status']='tomado'; v['chofer_tel']=data.get('chofer_tel'); v['chofer_nombre']=data.get('chofer_nombre'); v['chofer_placas']=data.get('chofer_placas'); v['chofer_modelo']=data.get('chofer_modelo'); v['tomado_en']=time.strftime("%Y-%m-%d %H:%M:%S"); guardar(); return jsonify({"ok":True, "viaje":v})
     return jsonify({"ok":False})
 @app.route("/api/viaje/finalizar", methods=["POST"])
 def finalizar():
     for v in viajes:
-        if v['id']==request.json['id']: 
-            v['status']='finalizado'
-            guardar()
-            return jsonify({"ok":True})
+        if v['id']==request.json['id']: v['status']='finalizado'; guardar(); return jsonify({"ok":True})
     return jsonify({"ok":False})
 @app.route("/api/viaje/estado/<id_viaje>")
 def estado_viaje(id_viaje):
     for v in viajes:
-        if v['id']==id_viaje:
-            return jsonify(v)
+        if v['id']==id_viaje: return jsonify(v)
     return jsonify({"ok":False})
-@app.route("/api/viajes_cliente")
-def viajes_cliente():
-    tel = request.args.get('tel')
-    result = [v for v in viajes if v.get('cliente_tel')==tel and v.get('status') in ['pendiente','tomado','en_curso']]
-    return jsonify(result)
 @app.route("/api/admin/login", methods=["POST"])
 def admin_login(): return jsonify({"ok":True}) if request.json.get('password')==ADMIN_PASSWORD else jsonify({"ok":False,"error":"Pass mal"})
 @app.route("/api/admin/data", methods=["POST"])
