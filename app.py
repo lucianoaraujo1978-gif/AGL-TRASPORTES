@@ -3,7 +3,6 @@ import json, os, math, time
 app = Flask(__name__)
 ADMIN_PASSWORD = "AGL2026"
 viajes, choferes_db, clientes_db, ubicaciones = [], [], [], {}
-
 def cargar():
   global viajes, choferes_db, clientes_db, ubicaciones
   try:
@@ -31,9 +30,8 @@ def haversine(lat1,lon1,lat2,lon2):
     R=6371; dLat=math.radians(lat2-lat1); dLon=math.radians(lon2-lon1)
     a=math.sin(dLat/2)**2+math.cos(math.radians(lat1))*math.cos(math.radians(lat2))*math.sin(dLon/2)**2
     return R*2*math.atan2(math.sqrt(a),math.sqrt(1-a))
-
 HTML = """<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>AGL V48 RECORRIDO COMPLETO</title>
+<title>AGL V49 INDRIVE</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
@@ -56,7 +54,7 @@ input{flex:1;border:none;outline:none;font-size:13px;font-weight:600;background:
 .inp{width:100%;padding:13px;margin:7px 0;border-radius:10px;border:1px solid #ddd;background:#f9f9f9}
 </style></head><body>
 <div id="alerta-radar">🚨 VIAJE CERCA! <span id="radar-txt"></span></div>
-<div id="modal-rol"><div class="box-rol"><h2>🚕 AGL Transporte</h2><p style="margin:8px 0 14px;color:#666;font-size:11px">V48 - RECORRIDO COMPLETO CON PARADAS</p>
+<div id="modal-rol"><div class="box-rol"><h2>🚕 AGL Transporte</h2><p style="margin:8px 0 14px;color:#666;font-size:11px">V49 - INDRIVE FULL ROUTE</p>
 <button onclick="elegirRol('cliente')" style="width:100%;padding:13px;border:none;border-radius:12px;font-weight:800;margin-bottom:8px;background:#000;color:#fff">👤 SOY CLIENTE</button>
 <button onclick="elegirRol('chofer')" style="width:100%;padding:13px;border:none;border-radius:12px;font-weight:800;margin-bottom:8px;background:#00c853;color:#fff">🚗 SOY CHOFER</button>
 <button onclick="elegirRol('admin')" style="width:100%;padding:13px;border:none;border-radius:12px;font-weight:800;background:#0a3552;color:#fff">🔐 SOY ADMIN</button></div></div>
@@ -82,7 +80,6 @@ input{flex:1;border:none;outline:none;font-size:13px;font-weight:600;background:
   <div class="menu-linea" onclick="agregarParada()"><div><b>➕ agregar parada</b><br><span id="txt-paradas" style="font-size:12px;color:#666">0 / 3 paradas</span></div><span style="font-size:22px">➕</span></div>
   <div class="menu-linea" onclick="borrarTodo()"><div><b>🧹 borrar todo</b></div><span>✏️</span></div>
   <div class="menu-linea" onclick="volverAlInicio()"><div><b>volver a menu inicial</b></div><span>🏠</span></div>
-  <div style="margin-top:20px"><button onclick="cerrarSesionTotal()" style="width:100%;background:#ffebee;color:#c62828;border:none;padding:12px;border-radius:10px;font-weight:700">Cerrar sesión</button></div>
 </div></div><div class="overlay" id="overlay" onclick="toggleMenu()"></div>
 <div id="cotizacion"><div id="dist" style="font-size:13px;color:#333;font-weight:600"></div><b id="precio" style="font-size:26px;color:#000">$0 MXN</b></div>
 <button class="btn-confirm" id="btnPedir" onclick="pedir()">Confirmar Flete $0</button>
@@ -97,7 +94,7 @@ input{flex:1;border:none;outline:none;font-size:13px;font-weight:600;background:
 <button onclick="choferRegistrar()" style="width:100%;padding:13px;background:#00c853;color:#fff;border:none;border-radius:10px">CREAR CHOFER</button>
 <button onclick="mostrarLoginChofer()" style="width:100%;padding:10px;background:none;border:none;color:#1976d2">Ya tengo cuenta</button>
 </div></div><div id="box-viajes-chofer" style="display:none"><div style="background:#000;color:#fff;padding:12px;display:flex;justify-content:space-between"><span id="nombre-chofer-log">Chofer</span><button onclick="choferLogout()" style="background:#ff5252;color:#fff;border:none;padding:6px 10px;border-radius:6px">Salir</button></div><div style="padding:10px"><div id="lista-viajes-chofer"></div></div></div></div>
-<div id="vista-admin" style="display:none"><div id="admin-login" style="padding:20px;max-width:400px;margin:80px auto;background:#fff;border-radius:16px"><h2 style="text-align:center">🔐 ADMIN</h2><input id="admin-pass-input" type="password" class="inp" placeholder="AGL2026"><button onclick="adminLogin()" style="width:100%;padding:14px;background:#000;color:#fff;border:none;border-radius:10px">ENTRAR</button><button onclick="volverAlInicio()" style="width:100%;margin-top:10px;padding:12px;background:#eee;border:none;border-radius:12px">⬅ VOLVER</button></div><div id="admin-panel" style="display:none;padding:12px;background:#eef2f7;min-height:100vh"><h1>🔐 ADMIN V48</h1><div style="display:flex;gap:6px;margin:12px 0"><button onclick="adminTab('viajes')" id="btn-viajes" style="flex:1;padding:12px;background:#000;color:#fff;border:none;border-radius:10px;font-weight:800">Viajes</button><button onclick="adminTab('choferes')" id="btn-choferes" style="flex:1;padding:12px;background:#fff;border:1px solid #000;border-radius:10px;font-weight:800">Choferes</button><button onclick="adminTab('clientes')" id="btn-clientes" style="flex:1;padding:12px;background:#fff;border:1px solid #000;border-radius:10px;font-weight:800">Clientes</button></div><div id="admin-viajes"></div><div id="admin-choferes" style="display:none"></div><div id="admin-clientes" style="display:none"></div><button onclick="volverAlInicio()" style="margin-top:12px;padding:12px;width:100%;background:#000;color:#fff;border:none;border-radius:10px">Volver</button></div></div>
+<div id="vista-admin" style="display:none"><div id="admin-login" style="padding:20px;max-width:400px;margin:80px auto;background:#fff;border-radius:16px"><h2 style="text-align:center">🔐 ADMIN</h2><input id="admin-pass-input" type="password" class="inp" placeholder="AGL2026"><button onclick="adminLogin()" style="width:100%;padding:14px;background:#000;color:#fff;border:none;border-radius:10px">ENTRAR</button><button onclick="volverAlInicio()" style="width:100%;margin-top:10px;padding:12px;background:#eee;border:none;border-radius:12px">⬅ VOLVER</button></div><div id="admin-panel" style="display:none;padding:12px;background:#eef2f7;min-height:100vh"><h1>🔐 ADMIN V49</h1><div style="display:flex;gap:6px;margin:12px 0"><button onclick="adminTab('viajes')" id="btn-viajes" style="flex:1;padding:12px;background:#000;color:#fff;border:none;border-radius:10px;font-weight:800">Viajes</button><button onclick="adminTab('choferes')" id="btn-choferes" style="flex:1;padding:12px;background:#fff;border:1px solid #000;border-radius:10px;font-weight:800">Choferes</button><button onclick="adminTab('clientes')" id="btn-clientes" style="flex:1;padding:12px;background:#fff;border:1px solid #000;border-radius:10px;font-weight:800">Clientes</button></div><div id="admin-viajes"></div><div id="admin-choferes" style="display:none"></div><div id="admin-clientes" style="display:none"></div><button onclick="volverAlInicio()" style="margin-top:12px;padding:12px;width:100%;background:#000;color:#fff;border:none;border-radius:10px">Volver</button></div></div>
 <script>
 let map=null,origenMarker=null,destinoMarker=null,parada1Marker=null,parada2Marker=null,parada3Marker=null,routeLine,kmActual=0,precioActual=0,tiempoActual=0,numParadasVisibles=0,miChofer=null,miPos={lat:21.8853,lng:-102.2916},origenLatLng=null,destinoLatLng=null;
 function toggleMenu(){document.getElementById('menu').classList.toggle('act');document.getElementById('overlay').classList.toggle('act');}
@@ -117,7 +114,6 @@ function initMap(){
 }
 function elegirRol(r){localStorage.setItem('rol_AGL',r);document.getElementById('modal-rol').style.display='none';if(r==='chofer'){document.getElementById('vista-cliente').style.display='none';document.getElementById('vista-chofer').style.display='block';document.getElementById('vista-admin').style.display='none';verificarSesionChofer();}else if(r==='admin'){document.getElementById('vista-cliente').style.display='none';document.getElementById('vista-chofer').style.display='none';document.getElementById('vista-admin').style.display='block';}else{document.getElementById('vista-chofer').style.display='none';document.getElementById('vista-admin').style.display='none';document.getElementById('vista-cliente').style.display='block';initMap();verificarSesionCliente();}}
 function volverAlInicio(){localStorage.removeItem('rol_AGL');document.getElementById('vista-cliente').style.display='none';document.getElementById('vista-chofer').style.display='none';document.getElementById('vista-admin').style.display='none';document.getElementById('modal-rol').style.display='flex';document.getElementById('menu').classList.remove('act');document.getElementById('overlay').classList.remove('act');if(map){map.remove();map=null;}origenMarker=null;destinoMarker=null;parada1Marker=null;parada2Marker=null;parada3Marker=null;routeLine=null;}
-function cerrarSesionTotal(){localStorage.clear();location.reload();}
 const verdeIcon=new L.Icon({iconUrl:'https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@master/img/marker-icon-2x-green.png',shadowUrl:'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',iconSize:[35,55],iconAnchor:[17,55]});
 const rojoIcon=new L.Icon({iconUrl:'https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@master/img/marker-icon-2x-red.png',shadowUrl:'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',iconSize:[35,55],iconAnchor:[17,55]});
 const amarilloIcon=new L.Icon({iconUrl:'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-yellow.png',shadowUrl:'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',iconSize:[35,55],iconAnchor:[17,55]});
@@ -137,34 +133,17 @@ function crearDestino(ll){destinoLatLng=ll; if(!destinoMarker){destinoMarker=L.m
 function crearParada1(ll){if(!parada1Marker){parada1Marker=L.marker(ll,{draggable:true,autoPan:true,icon:amarilloIcon}).addTo(map); makeDraggable(parada1Marker, (nl)=>{ponerDireccion(nl.lat,nl.lng,'parada1'); trazarLocal();});}else parada1Marker.setLatLng(ll); ponerDireccion(ll.lat,ll.lng,'parada1'); trazarLocal();}
 function crearParada2(ll){if(!parada2Marker){parada2Marker=L.marker(ll,{draggable:true,autoPan:true,icon:naranjaIcon}).addTo(map); makeDraggable(parada2Marker, (nl)=>{ponerDireccion(nl.lat,nl.lng,'parada2'); trazarLocal();});}else parada2Marker.setLatLng(ll); ponerDireccion(ll.lat,ll.lng,'parada2'); trazarLocal();}
 function crearParada3(ll){if(!parada3Marker){parada3Marker=L.marker(ll,{draggable:true,autoPan:true,icon:azulIcon}).addTo(map); makeDraggable(parada3Marker, (nl)=>{ponerDireccion(nl.lat,nl.lng,'parada3'); trazarLocal();});}else parada3Marker.setLatLng(ll); ponerDireccion(ll.lat,ll.lng,'parada3'); trazarLocal();}
-function agregarParada(){
-  if(numParadasVisibles>=3){alert('Máximo 3 paradas');return;}
-  numParadasVisibles++;
-  document.getElementById('boxP'+numParadasVisibles).style.display='flex';
-  document.getElementById('txt-paradas').innerText=numParadasVisibles+' / 3 paradas';
-  toggleMenu();
-}
+function agregarParada(){if(numParadasVisibles>=3){alert('Máximo 3 paradas');return;}numParadasVisibles++;document.getElementById('boxP'+numParadasVisibles).style.display='flex';document.getElementById('txt-paradas').innerText=numParadasVisibles+' / 3 paradas';toggleMenu();}
 function quitarParada(n){
   if(n==1 && parada1Marker){map.removeLayer(parada1Marker); parada1Marker=null; document.getElementById('boxP1').style.display='none';}
   if(n==2 && parada2Marker){map.removeLayer(parada2Marker); parada2Marker=null; document.getElementById('boxP2').style.display='none';}
   if(n==3 && parada3Marker){map.removeLayer(parada3Marker); parada3Marker=null; document.getElementById('boxP3').style.display='none';}
-  let visibles=0;
-  if(document.getElementById('boxP1').style.display!='none') visibles++;
-  if(document.getElementById('boxP2').style.display!='none') visibles++;
-  if(document.getElementById('boxP3').style.display!='none') visibles++;
-  numParadasVisibles=visibles;
-  document.getElementById('txt-paradas').innerText=numParadasVisibles+' / 3 paradas';
-  trazarLocal();
+  let visibles=0; if(document.getElementById('boxP1').style.display!='none') visibles++; if(document.getElementById('boxP2').style.display!='none') visibles++; if(document.getElementById('boxP3').style.display!='none') visibles++;
+  numParadasVisibles=visibles; document.getElementById('txt-paradas').innerText=numParadasVisibles+' / 3 paradas'; trazarLocal();
 }
 function miUbicacion(){navigator.geolocation.getCurrentPosition(p=>{let ll={lat:p.coords.latitude,lng:p.coords.longitude};miPos=ll;crearOrigen(ll);if(map) map.setView([ll.lat,ll.lng],16);});}
 function calcDist(lat1,lon1,lat2,lon2){let R=6371;let dLat=(lat2-lat1)*Math.PI/180;let dLon=(lon2-lon1)*Math.PI/180;let a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));}
-function calcularPrecio(km){
-    let arranque=40; let costoKm=10; let precio;
-    if(km<=1){ precio=arranque; } else { precio=Math.round(arranque+((km-1)*costoKm)); }
-    if(precio<80) precio=80;
-    let extra=0; if(parada1Marker) extra++; if(parada2Marker) extra++; if(parada3Marker) extra++;
-    precio+=extra*20; return precio;
-}
+function calcularPrecio(km){let arranque=40; let costoKm=10; let precio; if(km<=1){ precio=arranque; } else { precio=Math.round(arranque+((km-1)*costoKm)); } if(precio<80) precio=80; let extra=0; if(parada1Marker) extra++; if(parada2Marker) extra++; if(parada3Marker) extra++; precio+=extra*20; return precio;}
 function trazarLocal(){
     if(!origenMarker) return; let pts=[]; pts.push(origenMarker.getLatLng());
     if(parada1Marker) pts.push(parada1Marker.getLatLng()); if(parada2Marker) pts.push(parada2Marker.getLatLng()); if(parada3Marker) pts.push(parada3Marker.getLatLng()); if(destinoMarker) pts.push(destinoMarker.getLatLng());
@@ -206,45 +185,38 @@ async function pedir(){
   let fecha=document.getElementById('fecha').value; let hora=document.getElementById('hora').value;
   if(!fecha||!hora){alert('Abre el menú ☰ y selecciona fecha y hora'); toggleMenu(); return;}
   let id='V'+Date.now();
-  let data={id:id,cliente:ca?ca.nombre:'Cliente',cliente_tel:ca?ca.tel:'',fecha:fecha,hora:hora,origen:document.getElementById('origen').value,destino:document.getElementById('destino').value,origen_lat:origenLatLng.lat,origen_lng:origenLatLng.lng,destino_lat:destinoLatLng?destinoLatLng.lat:0,destino_lng:destinoLatLng?destinoLatLng.lng:0,parada1:document.getElementById('parada1').value,parada2:document.getElementById('parada2').value,parada3:document.getElementById('parada3').value,kms:kmActual,precio:precioActual,status:'pendiente',timestamp:new Date().toISOString()};
+  let data={
+    id:id,cliente:ca?ca.nombre:'Cliente',cliente_tel:ca?ca.tel:'',fecha:fecha,hora:hora,
+    origen:document.getElementById('origen').value,
+    destino:document.getElementById('destino').value,
+    origen_lat:origenLatLng.lat,origen_lng:origenLatLng.lng,
+    destino_lat:destinoLatLng?destinoLatLng.lat:0,destino_lng:destinoLatLng?destinoLatLng.lng:0,
+    parada1:document.getElementById('parada1').value,
+    parada2:document.getElementById('parada2').value,
+    parada3:document.getElementById('parada3').value,
+    parada1_lat:parada1Marker?parada1Marker.getLatLng().lat:0,
+    parada1_lng:parada1Marker?parada1Marker.getLatLng().lng:0,
+    parada2_lat:parada2Marker?parada2Marker.getLatLng().lat:0,
+    parada2_lng:parada2Marker?parada2Marker.getLatLng().lng:0,
+    parada3_lat:parada3Marker?parada3Marker.getLatLng().lat:0,
+    parada3_lng:parada3Marker?parada3Marker.getLatLng().lng:0,
+    kms:kmActual,precio:precioActual,status:'pendiente',timestamp:new Date().toISOString()
+  };
   await fetch('/api/viaje',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
   localStorage.setItem('viajeActualId', id);
-  alert('✅ Flete CONFIRMADO $'+precioActual+' CON '+numParadasVisibles+' PARADAS');
+  alert('✅ Flete CONFIRMADO $'+precioActual+' CON '+numParadasVisibles+' PARADAS - '+kmActual+'km');
   if(intervaloCliente) clearInterval(intervaloCliente);
   intervaloCliente=setInterval(()=>verEstadoMiViaje(id),4000); verEstadoMiViaje(id);
 }
 function borrarTodo(){document.getElementById('origen').value="";document.getElementById('destino').value="";document.getElementById('parada1').value="";document.getElementById('parada2').value="";document.getElementById('parada3').value="";document.getElementById('cotizacion').style.display="none";document.getElementById('btnPedir').style.display="none";if(origenMarker){map.removeLayer(origenMarker);origenMarker=null;}if(destinoMarker){map.removeLayer(destinoMarker);destinoMarker=null;}if(parada1Marker){map.removeLayer(parada1Marker);parada1Marker=null;}if(parada2Marker){map.removeLayer(parada2Marker);parada2Marker=null;}if(parada3Marker){map.removeLayer(parada3Marker);parada3Marker=null;}if(routeLine){map.removeLayer(routeLine);routeLine=null;}precioActual=0; kmActual=0; origenLatLng=null; destinoLatLng=null; numParadasVisibles=0;document.getElementById('boxP1').style.display='none';document.getElementById('boxP2').style.display='none';document.getElementById('boxP3').style.display='none';document.getElementById('txt-paradas').innerText='0 / 3 paradas';}
 function mostrarRegistroChofer(){document.getElementById('form-login').style.display='none';document.getElementById('form-registro').style.display='block';}
 function mostrarLoginChofer(){document.getElementById('form-registro').style.display='none';document.getElementById('form-login').style.display='block';}
-async function choferRegistrar(){
-  let n=document.getElementById('reg-nombre').value.trim(), t=document.getElementById('reg-tel').value.trim(), pl=document.getElementById('reg-placas').value.trim().toUpperCase(), mo=document.getElementById('reg-modelo').value.trim(), p=document.getElementById('reg-pass').value.trim();
-  if(!n||!t||!pl||!mo||!p){ alert('Llena todo'); return; }
-  let match=mo.match(/(19|20)[0-9]{2}/); if(!match){ alert('En modelo escribe el AÑO. Ej: Versa 2022'); return; }
-  let anio=parseInt(match[0]); let anioActual=new Date().getFullYear(); let anioMinimo=anioActual-6;
-  if(anio<anioMinimo){ alert('❌ Coche con más de 6 años. Mínimo '+anioMinimo); return; }
-  let res=await fetch('/api/chofer/registrar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nombre:n,tel:t,placas:pl,modelo:mo,anio:anio,pass:p})});
-  let d=await res.json(); if(!d.ok){alert(d.error);return;}
-  localStorage.setItem('choferActual',JSON.stringify(d.chofer)); verificarSesionChofer();
-}
+async function choferRegistrar(){let n=document.getElementById('reg-nombre').value.trim(), t=document.getElementById('reg-tel').value.trim(), pl=document.getElementById('reg-placas').value.trim().toUpperCase(), mo=document.getElementById('reg-modelo').value.trim(), p=document.getElementById('reg-pass').value.trim(); if(!n||!t||!pl||!mo||!p){ alert('Llena todo'); return; } let match=mo.match(/(19|20)[0-9]{2}/); if(!match){ alert('En modelo escribe el AÑO. Ej: Versa 2022'); return; } let anio=parseInt(match[0]); let anioActual=new Date().getFullYear(); let anioMinimo=anioActual-6; if(anio<anioMinimo){ alert('❌ Coche con más de 6 años. Mínimo '+anioMinimo); return; } let res=await fetch('/api/chofer/registrar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nombre:n,tel:t,placas:pl,modelo:mo,anio:anio,pass:p})}); let d=await res.json(); if(!d.ok){alert(d.error);return;} localStorage.setItem('choferActual',JSON.stringify(d.chofer)); verificarSesionChofer();}
 async function choferLogin(){let t=document.getElementById('chofer-tel').value.trim(),c=document.getElementById('chofer-pass').value.trim();let res=await fetch('/api/chofer/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tel:t,pass:c})});let d=await res.json();if(!d.ok){document.getElementById('msg-chofer').innerText=d.error;return;}localStorage.setItem('choferActual',JSON.stringify(d.chofer));verificarSesionChofer();}
 let radarInterval=null, ultimoViajeId=null;
-function verificarSesionChofer(){
-  let a=JSON.parse(localStorage.getItem('choferActual')||'null'); let va=JSON.parse(localStorage.getItem('viajeActivo')||'null');
-  if(a){document.getElementById('box-login-chofer').style.display='none';document.getElementById('box-viajes-chofer').style.display='block';document.getElementById('nombre-chofer-log').innerText=a.nombre;miChofer=a;if(va){ viajeActivo=va; mostrarViajeActivo(); } else { iniciarRadarAGL(); }}else{document.getElementById('box-login-chofer').style.display='block';document.getElementById('box-viajes-chofer').style.display='none';}
-}
-function iniciarRadarAGL(){
-  if(navigator.geolocation){navigator.geolocation.watchPosition(p=>{miPos={lat:p.coords.latitude,lng:p.coords.longitude};fetch('/api/chofer/heartbeat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tel:miChofer.tel,lat:miPos.lat,lng:miPos.lng})});},null,{enableHighAccuracy:true});}
-  if(radarInterval) clearInterval(radarInterval); radarInterval=setInterval(()=>{ mostrarViajesChofer(); }, 3000); mostrarViajesChofer();
-}
-function mostrarViajesChofer(){
-  let va=localStorage.getItem('viajeActivo'); if(va){ return; }
-  fetch('/api/viajes_cercanos?lat='+miPos.lat+'&lng='+miPos.lng).then(r=>r.json()).then(data=>{
-    let lista=document.getElementById('lista-viajes-chofer');
-    let fil=data.filter(x=>x.status==='pendiente');
-    if(fil.length>0 && fil[0].id!==ultimoViajeId){ultimoViajeId=fil[0].id;document.getElementById('radar-txt').innerText=fil[0].dist_km+'km - $'+fil[0].precio;document.getElementById('alerta-radar').style.display='block';setTimeout(()=>{ document.getElementById('alerta-radar').style.display='none'; }, 6000);}
-    lista.innerHTML=fil.map(x=>`<div style="border:2px solid #00c853;border-radius:12px;padding:12px;margin:8px 0;background:#f0fff4"><b>📍 A ${x.dist_km}km - $${x.precio}</b><br>${x.cliente} | ${x.kms}km<br>📅 ${x.fecha} ${x.hora}<br><span style="font-size:11px">${x.origen}<br>${x.parada1?'🟡 P1: '+x.parada1+'<br>':''}${x.parada2?'🟠 P2: '+x.parada2+'<br>':''}→ ${x.destino}</span><br><button onclick="tomarViaje('${x.id}')" style="background:#000;color:#fff;border:none;padding:12px;width:100%;border-radius:10px;margin-top:8px;font-weight:800">TOMAR $${x.precio}</button></div>`).join('')||'<div style="padding:30px;text-align:center;color:#888">🔍 Radar AGL activo<br>Buscando viajes en 15km...</div>';
-  });
-}
+function verificarSesionChofer(){let a=JSON.parse(localStorage.getItem('choferActual')||'null'); let va=JSON.parse(localStorage.getItem('viajeActivo')||'null'); if(a){document.getElementById('box-login-chofer').style.display='none';document.getElementById('box-viajes-chofer').style.display='block';document.getElementById('nombre-chofer-log').innerText=a.nombre;miChofer=a;if(va){ viajeActivo=va; mostrarViajeActivo(); } else { iniciarRadarAGL(); }}else{document.getElementById('box-login-chofer').style.display='block';document.getElementById('box-viajes-chofer').style.display='none';}}
+function iniciarRadarAGL(){if(navigator.geolocation){navigator.geolocation.watchPosition(p=>{miPos={lat:p.coords.latitude,lng:p.coords.longitude};fetch('/api/chofer/heartbeat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tel:miChofer.tel,lat:miPos.lat,lng:miPos.lng})});},null,{enableHighAccuracy:true});} if(radarInterval) clearInterval(radarInterval); radarInterval=setInterval(()=>{ mostrarViajesChofer(); }, 3000); mostrarViajesChofer();}
+function mostrarViajesChofer(){let va=localStorage.getItem('viajeActivo'); if(va){ return; } fetch('/api/viajes_cercanos?lat='+miPos.lat+'&lng='+miPos.lng).then(r=>r.json()).then(data=>{let lista=document.getElementById('lista-viajes-chofer'); let fil=data.filter(x=>x.status==='pendiente'); if(fil.length>0 && fil[0].id!==ultimoViajeId){ultimoViajeId=fil[0].id;document.getElementById('radar-txt').innerText=fil[0].dist_km+'km - $'+fil[0].precio;document.getElementById('alerta-radar').style.display='block';setTimeout(()=>{ document.getElementById('alerta-radar').style.display='none'; }, 6000);} lista.innerHTML=fil.map(x=>`<div style="border:2px solid #00c853;border-radius:12px;padding:12px;margin:8px 0;background:#f0fff4"><b>📍 A ${x.dist_km}km - $${x.precio}</b><br>${x.cliente} | ${x.kms}km<br>📅 ${x.fecha} ${x.hora}<br><span style="font-size:11px">${x.origen}<br>${x.parada1?'🟡 P1: '+x.parada1+'<br>':''}${x.parada2?'🟠 P2: '+x.parada2+'<br>':''}${x.parada3?'🔵 P3: '+x.parada3+'<br>':''}→ ${x.destino}</span><br><button onclick="tomarViaje('${x.id}')" style="background:#000;color:#fff;border:none;padding:12px;width:100%;border-radius:10px;margin-top:8px;font-weight:800">TOMAR $${x.precio}</button></div>`).join('')||'<div style="padding:30px;text-align:center;color:#888">🔍 Radar AGL activo<br>Buscando viajes en 15km...</div>';});}
 function choferLogout(){ if(radarInterval) clearInterval(radarInterval); localStorage.removeItem('choferActual'); location.reload(); }    
 function mostrarRegistroCli(){document.getElementById('form-login-c').style.display='none';document.getElementById('form-registro-c').style.display='block';}
 function mostrarLoginCli(){document.getElementById('form-registro-c').style.display='none';document.getElementById('form-login-c').style.display='block';}
@@ -252,13 +224,48 @@ async function clienteRegistrar(){let n=document.getElementById('cli-reg-nombre'
 async function clienteLogin(){let t=document.getElementById('cli-tel').value.trim(),c=document.getElementById('cli-pass').value.trim();let res=await fetch('/api/cliente/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tel:t,pass:c})});let d=await res.json();if(!d.ok){document.getElementById('msg-cli').innerText=d.error;return;}localStorage.setItem('clienteActual',JSON.stringify(d.cliente));verificarSesionClienteLogged();}
 function verificarSesionCliente(){let ca=JSON.parse(localStorage.getItem('clienteActual')||'null'); initMap(); if(ca){document.getElementById('box-login-cliente').style.display='none';document.getElementById('box-cliente-viaje').style.display='block';setTimeout(()=>{if(map) map.invalidateSize();},400);}else{document.getElementById('box-login-cliente').style.display='block';document.getElementById('box-cliente-viaje').style.display='none';}}
 function verificarSesionClienteLogged(){initMap();document.getElementById('box-login-cliente').style.display='none';document.getElementById('box-cliente-viaje').style.display='block';setTimeout(()=>{if(map) map.invalidateSize();},400);let idGuardado=localStorage.getItem('viajeActualId');if(idGuardado){if(intervaloCliente) clearInterval(intervaloCliente);intervaloCliente=setInterval(()=>verEstadoMiViaje(idGuardado),4000);verEstadoMiViaje(idGuardado);}}
-async function verEstadoMiViaje(id){try{let r=await fetch('/api/viaje/estado/'+id);let v=await r.json();if(!v||!v.id) return;let cot=document.getElementById('cotizacion');cot.style.display='block';if(v.status==='pendiente'){cot.innerHTML=`<b>🔍 BUSCANDO CHOFER...</b><br><span style="font-size:12px">${v.origen} → ${v.destino}</span><br>💰 $${v.precio}`;}else if(v.status==='tomado'||v.status==='en_curso'){cot.innerHTML=`<div style="background:#000;color:#fff;padding:12px;border-radius:12px;text-align:left"><b style="color:#00e676">✅ CHOFER EN CAMINO </b><br><b>Chofer: ${v.chofer_nombre}</b><br>🚗 ${v.chofer_modelo}<br>🔖 PLACA: <b style="font-size:20px">${v.chofer_placas}</b><br><a href="tel:${v.chofer_tel}" style="display:block;background:#fff;color:#000;padding:10px;border-radius:8px;margin-top:8px;text-align:center;text-decoration:none;font-weight:800">📞 LLAMAR CHOFER ${v.chofer_tel}</a></div>`;}else if(v.status==='finalizado'){clearInterval(intervaloCliente);localStorage.removeItem('viajeActualId');cot.innerHTML=`<b>✅ VIAJE FINALIZADO</b>`;setTimeout(()=>{ cot.style.display='none'; },4000);}}catch(e){}}
+async function verEstadoMiViaje(id){try{let r=await fetch('/api/viaje/estado/'+id);let v=await r.json();if(!v||!v.id) return;let cot=document.getElementById('cotizacion');let btn=document.getElementById('btnPedir');cot.style.display='block';if(v.status==='pendiente'){cot.innerHTML=`<b>🔍 BUSCANDO CHOFER...</b><br><span style="font-size:12px">${v.origen} → ${v.destino}</span><br>💰 $${v.precio}`;if(btn) btn.style.display='block';}else if(v.status==='tomado'||v.status==='en_curso'){cot.innerHTML=`<div style="background:#000;color:#fff;padding:12px;border-radius:12px;text-align:left"><b style="color:#00e676">✅ CHOFER EN CAMINO </b><br><b>Chofer: ${v.chofer_nombre}</b><br>🚗 ${v.chofer_modelo}<br>🔖 PLACA: <b style="font-size:18px">${v.chofer_placas}</b><br><a href="tel:${v.chofer_tel}" style="display:block;background:#fff;color:#000;padding:10px;border-radius:8px;margin-top:8px;text-align:center;text-decoration:none;font-weight:800">📞 LLAMAR CHOFER ${v.chofer_tel}</a></div>`;if(btn) btn.style.display='none';}else if(v.status==='finalizado'){clearInterval(intervaloCliente);localStorage.removeItem('viajeActualId');cot.innerHTML=`<b>✅ VIAJE FINALIZADO</b>`;if(btn) btn.style.display='none';setTimeout(()=>{ cot.style.display='none'; },4000);}}catch(e){}}
 let viajeActivo=null;
 async function tomarViaje(id){let ch=JSON.parse(localStorage.getItem('choferActual'));let res=await fetch('/api/viaje/tomar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:id,chofer_tel:ch.tel,chofer_nombre:ch.nombre,chofer_placas:ch.placas||'',chofer_modelo:ch.modelo||''})});let d=await res.json();if(!d.ok) return alert('Ya lo tomó otro');viajeActivo=d.viaje;localStorage.setItem('viajeActivo', JSON.stringify(viajeActivo));mostrarViajeActivo();}
 function mostrarViajeActivo(){
   let v=viajeActivo||JSON.parse(localStorage.getItem('viajeActivo')||'null');if(!v) return;
-  document.getElementById('lista-viajes-chofer').innerHTML=`<div style="background:#000;color:#fff;padding:8px 10px;border-radius:10px;margin-bottom:6px;font-size:11px"><b>✅ ${v.cliente} - $${v.precio} | ${v.kms}km</b> | ${v.cliente_tel}<br>📅 ${v.fecha} ${v.hora}</div><div style="background:#fff;padding:8px;border-radius:10px;border:1px solid #ddd"><div style="font-size:11px"><b>O:</b> ${v.origen}<br>${v.parada1?'<b style=color:#ffcc00>🟡 P1:</b> '+v.parada1+'<br>':''}${v.parada2?'<b style=color:#ff9500>🟠 P2:</b> '+v.parada2+'<br>':''}${v.parada3?'<b style=color:#00e5ff>🔵 P3:</b> '+v.parada3+'<br>':''}<b>D:</b> ${v.destino}</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px"><a href="https://www.google.com/maps/dir/?api=1&destination=${v.origen_lat},${v.origen_lng}" target="_blank" style="display:block;background:#276EF1;color:#fff;text-align:center;padding:8px;border-radius:8px;text-decoration:none;font-weight:800;font-size:11px">📍 ORIGEN</a><a href="https://www.google.com/maps/dir/${encodeURIComponent(v.origen)}/${encodeURIComponent(v.destino)}/" target="_blank" style="display:block;background:#000;color:#FFD700;border:1px solid #FFD700;text-align:center;padding:8px;border-radius:8px;text-decoration:none;font-weight:800;font-size:11px">🗺️ RECORRIDO</a><a href="https://waze.com/ul?ll=${v.origen_lat},${v.origen_lng}&navigate=yes" target="_blank" style="display:block;background:#00c853;color:#fff;text-align:center;padding:8px;border-radius:8px;text-decoration:none;font-weight:800;font-size:11px">🚗 WAZE</a><a href="tel:${v.cliente_tel}" style="display:block;background:#fff;border:1px solid #000;color:#000;text-align:center;padding:8px;border-radius:8px;text-decoration:none;font-weight:800;font-size:11px">📞 LLAMAR</a></div><a href="https://wa.me/52${v.cliente_tel}" target="_blank" style="display:block;background:#25D366;color:#fff;text-align:center;padding:8px;border-radius:8px;text-decoration:none;font-weight:800;font-size:11px;margin-top:6px">💬 WHATSAPP</a><button onclick="finalizarViaje()" style="width:100%;background:#ff3b30;color:#fff;border:none;padding:9px;border-radius:8px;font-weight:800;margin-top:6px;font-size:12px">🏁 FINALIZAR VIAJE</button></div><div id="map-chofer" style="height:280px;margin-top:6px;border-radius:10px"></div>`;
-  setTimeout(()=>{let mc=L.map('map-chofer').setView([v.origen_lat, v.origen_lng],14);L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',{subdomains:['mt0','mt1','mt2','mt3']}).addTo(mc);L.marker([v.origen_lat, v.origen_lng], {icon: verdeIcon}).addTo(mc).bindPopup("ORIGEN").openPopup();if(v.destino_lat) L.marker([v.destino_lat, v.destino_lng], {icon: rojoIcon}).addTo(mc).bindPopup("DESTINO");},300);
+  let waypoints=[];
+  if(v.parada1_lat && v.parada1_lat!=0) waypoints.push(`${v.parada1_lat},${v.parada1_lng}`);
+  if(v.parada2_lat && v.parada2_lat!=0) waypoints.push(`${v.parada2_lat},${v.parada2_lng}`);
+  if(v.parada3_lat && v.parada3_lat!=0) waypoints.push(`${v.parada3_lat},${v.parada3_lng}`);
+  let gmapsUrl=`https://www.google.com/maps/dir/?api=1&origin=${v.origen_lat},${v.origen_lng}&destination=${v.destino_lat},${v.destino_lng}`+(waypoints.length?`&waypoints=${waypoints.join('|')}`:'');
+  document.getElementById('lista-viajes-chofer').innerHTML=`<div style="background:#000;color:#fff;padding:12px;border-radius:12px;margin-bottom:10px"><b style="font-size:14px">💰 $${v.precio} • ${v.kms}km • ${v.fecha} ${v.hora}</b><br><span style="font-size:12px">${v.cliente} • ${v.cliente_tel}</span></div><div style="background:#fff;padding:14px;border-radius:14px;border:1px solid #ddd"><div style="font-size:12px;line-height:1.6"><b style="color:#00c853">● ORIGEN:</b> ${v.origen}<br>${v.parada1?`<b style="color:#ffcc00">● P1:</b> ${v.parada1}<br>`:''}${v.parada2?`<b style="color:#ff9500">● P2:</b> ${v.parada2}<br>`:''}${v.parada3?`<b style="color:#00bfff">● P3:</b> ${v.parada3}<br>`:''}<b style="color:#ff3b30">● DESTINO:</b> ${v.destino}</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px"><a href="https://www.google.com/maps/dir/?api=1&destination=${v.origen_lat},${v.origen_lng}" target="_blank" style="display:block;background:#276EF1;color:#fff;text-align:center;padding:10px;border-radius:8px;text-decoration:none;font-weight:800;font-size:11px">📍 ORIGEN</a><a href="${gmapsUrl}" target="_blank" style="display:block;background:#000;color:#FFD700;border:1px solid #FFD700;text-align:center;padding:10px;border-radius:8px;text-decoration:none;font-weight:800;font-size:11px">🗺️ RECORRIDO COMPLETO</a><a href="https://waze.com/ul?ll=${v.origen_lat},${v.origen_lng}&navigate=yes" target="_blank" style="display:block;background:#00c853;color:#fff;text-align:center;padding:10px;border-radius:8px;text-decoration:none;font-weight:800;font-size:11px">🚗 WAZE</a><a href="tel:${v.cliente_tel}" style="display:block;background:#fff;border:1px solid #000;color:#000;text-align:center;padding:10px;border-radius:8px;text-decoration:none;font-weight:800;font-size:11px">📞 LLAMAR</a></div><a href="https://wa.me/52${v.cliente_tel}" target="_blank" style="display:block;background:#25D366;color:#fff;text-align:center;padding:10px;border-radius:8px;text-decoration:none;font-weight:800;font-size:12px;margin-top:6px">💬 WHATSAPP</a><button onclick="finalizarViaje()" style="width:100%;background:#ff3b30;color:#fff;border:none;padding:12px;border-radius:8px;font-weight:800;margin-top:8px">🏁 FINALIZAR VIAJE</button></div><div id="map-chofer" style="height:400px;margin-top:10px;border-radius:12px;border:2px solid #000"></div>`;
+  setTimeout(async()=>{
+    let mc=L.map('map-chofer').setView([v.origen_lat, v.origen_lng],13);
+    L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',{subdomains:['mt0','mt1','mt2','mt3']}).addTo(mc);
+    let pts=[];
+    pts.push([v.origen_lat, v.origen_lng]);
+    if(v.parada1_lat && v.parada1_lat!=0) pts.push([v.parada1_lat, v.parada1_lng]);
+    if(v.parada2_lat && v.parada2_lat!=0) pts.push([v.parada2_lat, v.parada2_lng]);
+    if(v.parada3_lat && v.parada3_lat!=0) pts.push([v.parada3_lat, v.parada3_lng]);
+    if(v.destino_lat) pts.push([v.destino_lat, v.destino_lng]);
+    L.marker([v.origen_lat, v.origen_lng],{icon:verdeIcon}).addTo(mc).bindPopup("ORIGEN");
+    if(v.parada1_lat) L.marker([v.parada1_lat, v.parada1_lng],{icon:amarilloIcon}).addTo(mc).bindPopup("P1");
+    if(v.parada2_lat) L.marker([v.parada2_lat, v.parada2_lng],{icon:naranjaIcon}).addTo(mc).bindPopup("P2");
+    if(v.parada3_lat) L.marker([v.parada3_lat, v.parada3_lng],{icon:azulIcon}).addTo(mc).bindPopup("P3");
+    L.marker([v.destino_lat, v.destino_lng],{icon:rojoIcon}).addTo(mc).bindPopup("DESTINO");
+    try{
+      let s=pts.map(p=>p[1]+','+p[0]).join(';');
+      let r=await fetch(`https://router.project-osrm.org/route/v1/driving/${s}?overview=full&geometries=geojson`);
+      let j=await r.json();
+      if(j.routes && j.routes[0]){
+        let coords=j.routes[0].geometry.coordinates.map(c=>[c[1],c[0]]);
+        let line=L.polyline(coords,{color:'#276EF1',weight:6}).addTo(mc);
+        mc.fitBounds(line.getBounds(),{padding:[30,30]});
+      } else {
+        let line=L.polyline(pts,{color:'#276EF1',weight:5}).addTo(mc);
+        mc.fitBounds(line.getBounds(),{padding:[30,30]});
+      }
+    }catch(e){
+      let line=L.polyline(pts,{color:'#276EF1',weight:5}).addTo(mc);
+      mc.fitBounds(line.getBounds(),{padding:[30,30]});
+    }
+  },500);
 }
 function finalizarViaje(){if(!confirm('¿Finalizar viaje?')) return;let v=JSON.parse(localStorage.getItem('viajeActivo'));fetch('/api/viaje/finalizar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:v.id})});localStorage.removeItem('viajeActivo');viajeActivo=null;if(radarInterval) clearInterval(radarInterval);alert('✅ Viaje finalizado');location.reload();}
 async function adminLogin(){let p=document.getElementById('admin-pass-input').value;let res=await fetch('/api/admin/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:p})});let d=await res.json();if(!d.ok){alert(d.error);return;}localStorage.setItem('adminToken',p);document.getElementById('admin-login').style.display='none';document.getElementById('admin-panel').style.display='block';cargarAdmin();}
