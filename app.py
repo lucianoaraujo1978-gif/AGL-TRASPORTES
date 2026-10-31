@@ -339,13 +339,22 @@ async function tomarViaje(id){
 function mostrarViajeActivo(){
   let v = viajeActivo || JSON.parse(localStorage.getItem('viajeActivo')||'null');
   if(!v) return;
-  document.getElementById('lista-viajes-chofer').innerHTML = `
-    <div style="background:#000;color:#fff;padding:14px;border-radius:14px;margin-bottom:10px">
-      <b style="font-size:18px">✅ VIAJE TOMADO</b><br>
-      ${v.cliente} - ${v.cliente_tel}<br>
-      💰 $${v.precio} - ${v.kms}km<br>
-      📅 ${v.fecha} ${v.hora}
+document.getElementById('lista-viajes-chofer').innerHTML = `
+    <div style="background:#000;color:#fff;padding:8px 10px;border-radius:10px;margin-bottom:6px;font-size:12px;line-height:1.2">
+      <b>✅ ${v.cliente} - $${v.precio} | ${v.kms}km</b> | ${v.cliente_tel}
     </div>
+    <div style="background:#fff;padding:8px;border-radius:10px;border:1px solid #000">
+      <div style="font-size:11px;line-height:1.3"><b>O:</b> ${v.origen}<br><b>D:</b> ${v.destino}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px">
+        <a href="https://www.google.com/maps/dir/?api=1&destination=${v.origen_lat},${v.origen_lng}" target="_blank" style="display:block;background:#276EF1;color:#fff;text-align:center;padding:8px;border-radius:8px;text-decoration:none;font-weight:800;font-size:11px">📍 ORIGEN</a>
+        <a href="https://www.google.com/maps/dir/?api=1&origin=${v.origen_lat},${v.origen_lng}&destination=${v.destino_lat},${v.destino_lng}" target="_blank" style="display:block;background:#000;color:#FFD700;border:1px solid #FFD700;text-align:center;padding:8px;border-radius:8px;text-decoration:none;font-weight:800;font-size:11px">🗺️ RECORRIDO</a>
+        <a href="tel:${v.cliente_tel}" style="display:block;background:#fff;border:1px solid #000;color:#000;text-align:center;padding:8px;border-radius:8px;text-decoration:none;font-weight:800;font-size:11px">📞 LLAMAR</a>
+        <a href="https://wa.me/52${v.cliente_tel}" target="_blank" style="display:block;background:#25D366;color:#fff;text-align:center;padding:8px;border-radius:8px;text-decoration:none;font-weight:800;font-size:11px">💬 WHATSAPP</a>
+      </div>
+      <button onclick="finalizarViaje()" style="width:100%;background:#ff3b30;color:#fff;border:none;padding:8px;border-radius:8px;font-weight:800;margin-top:6px;font-size:11px">🏁 FINALIZAR</button>
+    </div>
+    <div id="map-chofer" style="height:280px;margin-top:6px;border-radius:10px"></div>
+  `;
     <div style="background:#fff;padding:12px;border-radius:12px;border:2px solid #000">
       <b>ORIGEN:</b><br>${v.origen}<br><br>
       <b>DESTINO:</b><br>${v.destino}<br><br>
