@@ -305,12 +305,14 @@ def viajes_cercanos():
             vc=dict(v); vc['dist_km']=round(d,1); result.append(vc)
     return jsonify(sorted(result, key=lambda x: x['dist_km']))
 @app.route("/api/chofer/registrar", methods=["POST"])
-def chofer_reg(): d=request.json; 
-    if any(c['tel']==d['tel'] for c in choferes_db): return jsonify({"ok":False,"error":"Ya registrado"})
-    choferes_db.append(d); guardar(); return jsonify({"ok":True,"chofer":d})
+def chofer_reg():
+  d=request.json
+  if any(c['tel']==d['tel'] for c in choferes_db): return jsonify({"ok":False,"error":"Ya registrado"})
+  choferes_db.append(d); guardar(); return jsonify({"ok":True,"chofer":d})
 @app.route("/api/chofer/login", methods=["POST"])
-def chofer_login(): d=request.json; f=next((c for c in choferes_db if c['tel']==d['tel'] and c['pass']==d['pass']),None); return jsonify({"ok":True,"chofer":f}) if f else jsonify({"ok":False,"error":"Pass mal"})
-@app.route("/api/cliente/registrar", methods=["POST"])
+def chofer_login():
+  d=request.json
+  return jsonify({"ok":True,"chofer":next((c for c in choferes_db if c['tel']==d['tel'] and c['pass']==d['pass']),None)})@app.route("/api/cliente/registrar", methods=["POST"])
 def cli_reg(): d=request.json; 
     if any(c['tel']==d['tel'] for c in clientes_db): return jsonify({"ok":False,"error":"Ya registrado"})
     clientes_db.append(d); guardar(); return jsonify({"ok":True,"cliente":d})
