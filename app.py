@@ -184,6 +184,17 @@ async function pedir(){
   let ca=JSON.parse(localStorage.getItem('clienteActual')||'null');
   let fecha=document.getElementById('fecha').value; let hora=document.getElementById('hora').value;
   if(!fecha||!hora){alert('Abre el menú ☰ y selecciona fecha y hora'); toggleMenu(); return;}
+
+  function getParada(marker, inputId){
+    if(!marker) return {txt:'', lat:0, lng:0};
+    let ll = marker.getLatLng();
+    let txt = document.getElementById(inputId).value || (ll.lat.toFixed(5)+', '+ll.lng.toFixed(5));
+    return {txt: txt, lat: ll.lat, lng: ll.lng};
+  }
+  let p1 = getParada(parada1Marker, 'parada1');
+  let p2 = getParada(parada2Marker, 'parada2');
+  let p3 = getParada(parada3Marker, 'parada3');
+
   let id='V'+Date.now();
   let data={
     id:id,cliente:ca?ca.nombre:'Cliente',cliente_tel:ca?ca.tel:'',fecha:fecha,hora:hora,
@@ -191,20 +202,15 @@ async function pedir(){
     destino:document.getElementById('destino').value,
     origen_lat:origenLatLng.lat,origen_lng:origenLatLng.lng,
     destino_lat:destinoLatLng?destinoLatLng.lat:0,destino_lng:destinoLatLng?destinoLatLng.lng:0,
-    parada1:document.getElementById('parada1').value,
-    parada2:document.getElementById('parada2').value,
-    parada3:document.getElementById('parada3').value,
-    parada1_lat:parada1Marker?parada1Marker.getLatLng().lat:0,
-    parada1_lng:parada1Marker?parada1Marker.getLatLng().lng:0,
-    parada2_lat:parada2Marker?parada2Marker.getLatLng().lat:0,
-    parada2_lng:parada2Marker?parada2Marker.getLatLng().lng:0,
-    parada3_lat:parada3Marker?parada3Marker.getLatLng().lat:0,
-    parada3_lng:parada3Marker?parada3Marker.getLatLng().lng:0,
+    parada1:p1.txt, parada2:p2.txt, parada3:p3.txt,
+    parada1_lat:p1.lat, parada1_lng:p1.lng,
+    parada2_lat:p2.lat, parada2_lng:p2.lng,
+    parada3_lat:p3.lat, parada3_lng:p3.lng,
     kms:kmActual,precio:precioActual,status:'pendiente',timestamp:new Date().toISOString()
   };
   await fetch('/api/viaje',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
   localStorage.setItem('viajeActualId', id);
-  alert('✅ Flete CONFIRMADO $'+precioActual+' CON '+numParadasVisibles+' PARADAS - '+kmActual+'km');
+  alert('✅ Flete CONFIRMADO $'+precioActual+' CON '+( (p1.lat?1:0)+(p2.lat?1:0)+(p3.lat?1:0) )+' PARADAS - '+kmActual+'km');
   if(intervaloCliente) clearInterval(intervaloCliente);
   intervaloCliente=setInterval(()=>verEstadoMiViaje(id),4000); verEstadoMiViaje(id);
 }
