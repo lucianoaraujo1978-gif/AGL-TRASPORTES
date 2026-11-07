@@ -2,8 +2,23 @@ from flask import Flask, render_template_string, request, jsonify
 import json, os, math, time
 app = Flask(__name__)
 ADMIN_PASSWORD = "AGL2026"
+import sqlite3
+
+def get_db():
+    db = sqlite3.connect("agl.db")
+    db.row_factory = sqlite3.Row
+    return db
+
+def init_db():
+    db = get_db()
+    db.execute("CREATE TABLE IF NOT EXISTS viajes (id TEXT PRIMARY KEY, datos TEXT)")
+    db.execute("CREATE TABLE IF NOT EXISTS choferes (tel TEXT PRIMARY KEY, datos TEXT)")
+    db.execute("CREATE TABLE IF NOT EXISTS clientes (tel TEXT PRIMARY KEY, datos TEXT)")
+    db.commit()
+    db.close()
+
+init_db()
 viajes, choferes_db, clientes_db, ubicaciones = [], [], [], {}
-def cargar():
   global viajes, choferes_db, clientes_db, ubicaciones
   try:
     for arch in ["viajes.json","choferes_db.json","clientes_db.json","ubicaciones.json"]:
@@ -309,25 +324,36 @@ def chofer_reg():
   d=request.json
   if any(c['tel']==d['tel'] for c in choferes_db): return jsonify({"ok":False,"error":"Ya registrado"})
   choferes_db.append(d); guardar(); return jsonify({"ok":True,"chofer":d})
-@app.route("/api/chofer/login", methods=["POST"])
+@@app.route("/api/chofer/login", methods=["POST"])
 def chofer_login():
   d=request.json
-  return jsonify({"ok":True,"chofer":next((c for c in choferes_db if c['tel']==d['tel'] and c['pass']==d['pass']),None)})@app.route("/api/cliente/registrar", methods=["POST"])
-def cli_reg(): d=request.json; 
-    if any(c['tel']==d['tel'] for c in clientes_db): return jsonify({"ok":False,"error":"Ya registrado"})
-    clientes_db.append(d); guardar(); return jsonify({"ok":True,"cliente":d})
+  f = next((c for c in choferes_db if c['tel']==d['tel'] and c['pass']==d['pass']), None)
+  if not f:
+      return jsonify({"ok":False,"error":"Cel o pass mal"})
+  return jsonify({"ok":True,"chofer":f})
+  @app.route("/api/cliente/registrar", methods=["POST"])
+def cli_reg():
+    d = request.json
+    if any(c['tel']==d['tel'] for c in clientes_db):
+        return jsonify({"ok":False,"error":"Ya registrado"})
+    clientes_db.append(d)
+    guardar()
+    return jsonify({"ok":True,"cliente":d})
 @app.route("/api/cliente/login", methods=["POST"])
 def cli_login(): d=request.json; f=next((c for c in clientes_db if c['tel']==d['tel'] and c['pass']==d['pass']),None); return jsonify({"ok":True,"cliente":f}) if f else jsonify({"ok":False,"error":"Cel o pass mal"})
 @app.route("/api/viaje/tomar", methods=["POST"])
 def tomar(): data=request.json; 
     for v in viajes:
-        if v['id']==data['id']: v['status']='tomado'; v['chofer_tel']=data.get('chofer_tel'); v['chofer_nombre']=data.get('chofer_nombre'); v['chofer_placas']=data.get('chofer_placas'); v['chofer_modelo']=data.get('chofer_modelo'); guardar(); return jsonify({"ok":True, "viaje":v})
+        if v['id']==data['id']: v['status']='en_curso'; v['chofer_tel']=data.get('chofer_tel'); v['chofer_nombre']=data.get('chofer_nombre'); v['chofer_placas']=data.get('chofer_placas'); v['chofer_modelo']=data.get('chofer_modelo'); guardar(); return jsonify({"ok":True, "viaje":v})
     return jsonify({"ok":False})
 @app.route("/api/viaje/finalizar", methods=["POST"])
 def finalizar(): 
     for v in viajes:
         if v['id']==request.json['id']: v['status']='finalizado'; guardar(); return jsonify({"ok":True})
     return jsonify({"ok":False})
+  @app.route("/api/chofer/viajes")
+def viajes_chofer():
+    return jsonify([v for v in viajes if v.get("status") in ["pendiente", "en_curso"]])
 @app.route("/api/viaje/estado/<id_viaje>")
 def estado_viaje(id_viaje):
     for v in viajes:
