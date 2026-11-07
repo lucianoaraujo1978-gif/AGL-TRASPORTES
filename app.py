@@ -19,7 +19,8 @@ def init_db():
 
 init_db()
 viajes, choferes_db, clientes_db, ubicaciones = [], [], [], {}
-  global viajes, choferes_db, clientes_db, ubicaciones
+  def cargar():
+    global viajes, choferes_db, clientes_db, ubicaciones
   try:
     for arch in ["viajes.json","choferes_db.json","clientes_db.json","ubicaciones.json"]:
         if not os.path.exists(arch):
