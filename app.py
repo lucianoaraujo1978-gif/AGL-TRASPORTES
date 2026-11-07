@@ -322,7 +322,7 @@ def chofer_reg():
   d=request.json
   if any(c['tel']==d['tel'] for c in choferes_db): return jsonify({"ok":False,"error":"Ya registrado"})
   choferes_db.append(d); guardar(); return jsonify({"ok":True,"chofer":d})
-@@app.route("/api/chofer/login", methods=["POST"])
+@app.route("/api/chofer/login", methods=["POST"])
 def chofer_login():
   d=request.json
   f = next((c for c in choferes_db if c['tel']==d['tel'] and c['pass']==d['pass']), None)
