@@ -3,12 +3,10 @@ import json, os, math, time
 app = Flask(__name__)
 ADMIN_PASSWORD = "AGL2026"
 import sqlite3
-
 def get_db():
     db = sqlite3.connect("agl.db")
     db.row_factory = sqlite3.Row
     return db
-
 def init_db():
     db = get_db()
     db.execute("CREATE TABLE IF NOT EXISTS viajes (id TEXT PRIMARY KEY, datos TEXT)")
