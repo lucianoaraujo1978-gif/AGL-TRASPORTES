@@ -15,13 +15,12 @@ def init_db():
     db.execute("CREATE TABLE IF NOT EXISTS choferes (tel TEXT PRIMARY KEY, datos TEXT)")
     db.execute("CREATE TABLE IF NOT EXISTS clientes (tel TEXT PRIMARY KEY, datos TEXT)")
     db.commit()
-    db.close()
-
+        db.close()
 init_db()
 viajes, choferes_db, clientes_db, ubicaciones = [], [], [], {}
-  def cargar():
+def cargar():
     global viajes, choferes_db, clientes_db, ubicaciones
-  try:
+    try:
     for arch in ["viajes.json","choferes_db.json","clientes_db.json","ubicaciones.json"]:
         if not os.path.exists(arch):
             with open(arch,"w") as f: f.write("[]" if "viajes" in arch or "choferes" in arch or "clientes" in arch else "{}")
