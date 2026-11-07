@@ -309,14 +309,14 @@ def api_viaje(): data=request.json; viajes.append(data); guardar(); return jsoni
 def heartbeat(): d=request.json; ubicaciones[d['tel']]={'lat':d['lat'],'lng':d['lng'],'ts':time.time()}; guardar(); return jsonify({"ok":True})
 @app.route("/api/viajes_cercanos")
 def viajes_cercanos():
-        lat=float(request.args.get('lat',21.8853)); lng=float(request.args.get('lng',-102.2916)); result=[]
+    lat=float(request.args.get('lat',21.8853)); lng=float(request.args.get('lng',-102.2916)); result=[]
     for v in viajes:
         if v.get('status')!='pendiente': continue
         if not v.get('origen_lat'): continue
         d=haversine(lat,lng,v.get('origen_lat'),v.get('origen_lng'))
-        if d <= 15.0:
+        if d < 15.0:
             vc=dict(v); vc['dist_km']=round(d,1); result.append(vc)
-    return jsonify(sorted(result, key=lambda x: x['dist_km']))
+    return jsonify(result=result)
 @app.route("/api/chofer/registrar", methods=["POST"])
 def chofer_reg():
   d=request.json
