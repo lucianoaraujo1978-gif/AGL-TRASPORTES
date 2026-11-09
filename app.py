@@ -361,25 +361,48 @@ def cli_reg():
     sin_pass = {k: v for k, v in d.items() if k != 'pass'}
     return jsonify({"ok": True, "cliente": sin_pass})
 @app.route("/api/cliente/login", methods=["POST"])
-def cli_login(): d=request.json; f=next((c for c in clientes_db if c['tel']==d['tel'] and c['pass']==d['pass']),None); return jsonify({"ok":True,"cliente":f}) if f else jsonify({"ok":False,"error":"Cel o pass mal"})
+def cli_login():
+    d = request.json or {}
+    f = next((c for c in clientes_db if c.get('tel') == d.get('tel') and c.get('pass') == d.get('pass')), None)
+    if not f:
+        return jsonify({"ok": False, "error": "Cel o pass mal"})
+    sin_pass = {k: v for k, v in f.items() if k != 'pass'}
+    return jsonify({"ok": True, "cliente": sin_pass})
+
 @app.route("/api/viaje/tomar", methods=["POST"])
-def tomar(): data=request.json; 
+def tomar():
+    data = request.json or {}
     for v in viajes:
-        if v['id']==data['id']: v['status']='en_curso'; v['chofer_tel']=data.get('chofer_tel'); v['chofer_nombre']=data.get('chofer_nombre'); v['chofer_placas']=data.get('chofer_placas'); v['chofer_modelo']=data.get('chofer_modelo'); guardar(); return jsonify({"ok":True, "viaje":v})
-    return jsonify({"ok":False})
+        if v['id'] == data.get('id'):
+            v['status'] = 'en_curso'
+            v['chofer_tel'] = data.get('chofer_tel')
+            v['chofer_nombre'] = data.get('chofer_nombre')
+            v['chofer_placas'] = data.get('chofer_placas')
+            v['chofer_modelo'] = data.get('chofer_modelo')
+            guardar()
+            return jsonify({"ok": True, "viaje": v})
+    return jsonify({"ok": False})
+    
 @app.route("/api/viaje/finalizar", methods=["POST"])
-def finalizar(): 
+def finalizar():
+    data = request.json or {}
     for v in viajes:
-        if v['id']==request.json['id']: v['status']='finalizado'; guardar(); return jsonify({"ok":True})
-    return jsonify({"ok":False})
-  @app.route("/api/chofer/viajes")
+        if v['id'] == data.get('id'):
+            v['status'] = 'finalizado'
+            guardar()
+            return jsonify({"ok": True})
+    return jsonify({"ok": False})
+
+@app.route("/api/chofer/viajes")
 def viajes_chofer():
     return jsonify([v for v in viajes if v.get("status") in ["pendiente", "en_curso"]])
+
 @app.route("/api/viaje/estado/<id_viaje>")
 def estado_viaje(id_viaje):
     for v in viajes:
-        if v['id']==id_viaje: return jsonify(v)
-    return jsonify({"ok":False})
+        if v['id'] == id_viaje:
+            return jsonify(v)
+    return jsonify({"ok": False})
 @app.route("/api/admin/login", methods=["POST"])
 def admin_login(): return jsonify({"ok":True}) if request.json.get('password')==ADMIN_PASSWORD else jsonify({"ok":False,"error":"Pass mal"})
 @app.route("/api/admin/data", methods=["POST"])
