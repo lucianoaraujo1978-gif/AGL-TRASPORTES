@@ -324,11 +324,11 @@ def chofer_reg():
   choferes_db.append(d); guardar(); return jsonify({"ok":True,"chofer":d})
 @app.route("/api/chofer/login", methods=["POST"])
 def chofer_login():
-    d=request.json
-    f = next((c for c in choferes_db if c['tel']==d['tel'] and c['pass']==d['pass']), None)
-    if not f:
-        return jsonify({"ok":False,"error":"Cel o pass mal"})
-    return jsonify({"ok":True,"chofer":f})
+d=request.json
+f = next((c for c in choferes_db if c['tel']==d['tel'] and c['pass']==d['pass']), None)
+if not f:
+    return jsonify({"ok":False,"error":"Cel o pass mal"})
+return jsonify({"ok":True,"chofer":f})
 @app.route("/api/cliente/registrar", methods=["POST"])
 def cli_reg():
     d = request.json
