@@ -2,43 +2,85 @@ from flask import Flask, render_template_string, request, jsonify
 import json, os, math, time
 app = Flask(__name__)
 ADMIN_PASSWORD = "AGL2026"
-import sqlite3
-def get_db():
-    db = sqlite3.connect("agl.db")
-    db.row_factory = sqlite3.Row
-    return db
+
+DATABASE_URL = os.environ.get("DATABASE_URL")
+if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
+def get_conn():
+    if DATABASE_URL:
+        import psycopg2
+        return psycopg2.connect(DATABASE_URL)
+    else:
+        import sqlite3
+        conn = sqlite3.connect("agl.db")
+        conn.row_factory = sqlite3.Row
+        return conn
+
 def init_db():
-    db = get_db()
-    db.execute("CREATE TABLE IF NOT EXISTS viajes (id TEXT PRIMARY KEY, datos TEXT)")
-    db.execute("CREATE TABLE IF NOT EXISTS choferes (tel TEXT PRIMARY KEY, datos TEXT)")
-    db.execute("CREATE TABLE IF NOT EXISTS clientes (tel TEXT PRIMARY KEY, datos TEXT)")
-    db.commit()
-    db.close()
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute("CREATE TABLE IF NOT EXISTS viajes (id TEXT PRIMARY KEY, datos TEXT)")
+    cur.execute("CREATE TABLE IF NOT EXISTS choferes (tel TEXT PRIMARY KEY, datos TEXT)")
+    cur.execute("CREATE TABLE IF NOT EXISTS clientes (tel TEXT PRIMARY KEY, datos TEXT)")
+    cur.execute("CREATE TABLE IF NOT EXISTS ubicaciones (tel TEXT PRIMARY KEY, datos TEXT)")
+    conn.commit()
+    cur.close()
+    conn.close()
+
 init_db()
+
 viajes, choferes_db, clientes_db, ubicaciones = [], [], [], {}
+
 def cargar():
     global viajes, choferes_db, clientes_db, ubicaciones
     try:
-        for arch in ["viajes.json","choferes_db.json","clientes_db.json","ubicaciones.json"]:
-            if not os.path.exists(arch):
-                with open(arch,"w") as f: f.write("[]" if "viajes" in arch or "choferes" in arch or "clientes" in arch else "{}")
-        if os.path.exists("viajes.json"):
-            with open("viajes.json") as f: viajes[:] = json.load(f)
-        if os.path.exists("choferes_db.json"):
-            with open("choferes_db.json") as f: choferes_db[:] = json.load(f)
-        if os.path.exists("clientes_db.json"):
-            with open("clientes_db.json") as f: clientes_db[:] = json.load(f)
-        if os.path.exists("ubicaciones.json"):
-            with open("ubicaciones.json") as f: ubicaciones.update(json.load(f))
-    except: pass
+        conn = get_conn()
+        cur = conn.cursor()
+        cur.execute("SELECT datos FROM viajes")
+        viajes[:] = [json.loads(r[0]) for r in cur.fetchall()]
+        cur.execute("SELECT datos FROM choferes")
+        choferes_db[:] = [json.loads(r[0]) for r in cur.fetchall()]
+        cur.execute("SELECT datos FROM clientes")
+        clientes_db[:] = [json.loads(r[0]) for r in cur.fetchall()]
+        cur.execute("SELECT datos FROM ubicaciones")
+        ubicaciones.clear()
+        for r in cur.fetchall():
+            ubicaciones.update(json.loads(r[0]))
+        cur.close()
+        conn.close()
+    except Exception as e:
+        print("Error cargar:", e)
+
 def guardar():
     try:
-        with open("viajes.json","w") as f: json.dump(viajes,f)
-        with open("choferes_db.json","w") as f: json.dump(choferes_db,f)
-        with open("clientes_db.json","w") as f: json.dump(clientes_db,f)
-        with open("ubicaciones.json","w") as f: json.dump(ubicaciones,f)
-    except: pass
+        conn = get_conn()
+        cur = conn.cursor()
+        ph = "%s" if DATABASE_URL else "?"
+        # viajes
+        cur.execute("DELETE FROM viajes")
+        for item in viajes:
+            cur.execute(f"INSERT INTO viajes (id, datos) VALUES ({ph}, {ph})", (str(item.get("id","")), json.dumps(item)))
+        # choferes
+        cur.execute("DELETE FROM choferes")
+        for item in choferes_db:
+            cur.execute(f"INSERT INTO choferes (tel, datos) VALUES ({ph}, {ph})", (str(item.get("tel","")), json.dumps(item)))
+        # clientes
+        cur.execute("DELETE FROM clientes")
+        for item in clientes_db:
+            cur.execute(f"INSERT INTO clientes (tel, datos) VALUES ({ph}, {ph})", (str(item.get("tel","")), json.dumps(item)))
+        # ubicaciones
+        cur.execute("DELETE FROM ubicaciones")
+        if ubicaciones:
+            cur.execute(f"INSERT INTO ubicaciones (tel, datos) VALUES ({ph}, {ph})", ("all", json.dumps(ubicaciones)))
+        conn.commit()
+        cur.close()
+        conn.close()
+    except Exception as e:
+        print("Error guardar:", e)
+
 cargar()
+
 def haversine(lat1,lon1,lat2,lon2):
     R=6371; dLat=math.radians(lat2-lat1); dLon=math.radians(lon2-lon1)
     a=math.sin(dLat/2)**2+math.cos(math.radians(lat1))*math.cos(math.radians(lat2))*math.sin(dLon/2)**2
