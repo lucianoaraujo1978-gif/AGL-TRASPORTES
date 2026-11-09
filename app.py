@@ -317,11 +317,7 @@ def viajes_cercanos():
         if d < 15.0:
             vc=dict(v); vc['dist_km']=round(d,1); result.append(vc)
     return jsonify(result=result)
-@app.route("/api/chofer/registrar", methods=["POST"])
-def chofer_reg():
-  d=request.json
-  if any(c['tel']==d['tel'] for c in choferes_db): return jsonify({"ok":False,"error":"Ya registrado"})
-  choferes_db.append(d); guardar(); return jsonify({"ok":True,"chofer":d})
+    
 @app.route("/api/chofer/registrar", methods=["POST"])
 def chofer_reg():
     d = request.json or {}
