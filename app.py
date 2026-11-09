@@ -322,21 +322,44 @@ def chofer_reg():
   d=request.json
   if any(c['tel']==d['tel'] for c in choferes_db): return jsonify({"ok":False,"error":"Ya registrado"})
   choferes_db.append(d); guardar(); return jsonify({"ok":True,"chofer":d})
+@app.route("/api/chofer/registrar", methods=["POST"])
+def chofer_reg():
+    d = request.json or {}
+    if not d.get('tel') or not d.get('pass'):
+        return jsonify({"ok": False, "error": "Falta tel o pass"})
+
+    if any(c['tel'] == d['tel'] for c in choferes_db):
+        return jsonify({"ok": False, "error": "Ya registrado"})
+
+    choferes_db.append(d)
+    guardar()
+    # NO regresamos la pass
+    sin_pass = {k: v for k, v in d.items() if k != 'pass'}
+    return jsonify({"ok": True, "chofer": sin_pass})
+
 @app.route("/api/chofer/login", methods=["POST"])
 def chofer_login():
-d=request.json
-f = next((c for c in choferes_db if c['tel']==d['tel'] and c['pass']==d['pass']), None)
-if not f:
-    return jsonify({"ok":False,"error":"Cel o pass mal"})
-return jsonify({"ok":True,"chofer":f})
+    d = request.json or {}
+    f = next((c for c in choferes_db if c.get('tel') == d.get('tel') and c.get('pass') == d.get('pass')), None)
+    if not f:
+        return jsonify({"ok": False, "error": "Cel o pass mal"})
+    
+    sin_pass = {k: v for k, v in f.items() if k != 'pass'}
+    return jsonify({"ok": True, "chofer": sin_pass})
+
 @app.route("/api/cliente/registrar", methods=["POST"])
 def cli_reg():
-    d = request.json
-    if any(c['tel']==d['tel'] for c in clientes_db):
-        return jsonify({"ok":False,"error":"Ya registrado"})
+    d = request.json or {}
+    if not d.get('tel') or not d.get('pass'):
+        return jsonify({"ok": False, "error": "Falta tel o pass"})
+
+    if any(c['tel'] == d['tel'] for c in clientes_db):
+        return jsonify({"ok": False, "error": "Ya registrado"})
+
     clientes_db.append(d)
     guardar()
-    return jsonify({"ok":True,"cliente":d})
+    sin_pass = {k: v for k, v in d.items() if k != 'pass'}
+    return jsonify({"ok": True, "cliente": sin_pass})
 @app.route("/api/cliente/login", methods=["POST"])
 def cli_login(): d=request.json; f=next((c for c in clientes_db if c['tel']==d['tel'] and c['pass']==d['pass']),None); return jsonify({"ok":True,"cliente":f}) if f else jsonify({"ok":False,"error":"Cel o pass mal"})
 @app.route("/api/viaje/tomar", methods=["POST"])
