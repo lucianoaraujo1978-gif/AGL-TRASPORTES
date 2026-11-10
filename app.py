@@ -461,14 +461,6 @@ def mi_activo():
             return jsonify({"ok": True, "viaje": v})
     return jsonify({"ok": False})
 
-@app.route("/api/viaje/mi_activo")
-def mi_activo():
-    tel = request.args.get('tel','')
-    for v in viajes:
-        if v.get('chofer_tel') == tel and v.get('status') == 'en_curso':
-            return jsonify({"ok": True, "viaje": v})
-    return jsonify({"ok": False})
-
 @app.route("/api/viaje/tomar", methods=["POST"])
 def tomar():
     data = request.json or {}
