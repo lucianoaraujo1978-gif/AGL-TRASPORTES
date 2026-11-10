@@ -275,7 +275,26 @@ function mostrarLoginChofer(){document.getElementById('form-registro').style.dis
 async function choferRegistrar(){let n=document.getElementById('reg-nombre').value.trim(), t=document.getElementById('reg-tel').value.trim(), pl=document.getElementById('reg-placas').value.trim().toUpperCase(), mo=document.getElementById('reg-modelo').value.trim(), p=document.getElementById('reg-pass').value.trim(); if(!n||!t||!pl||!mo||!p){ alert('Llena todo'); return; } let match=mo.match(/(19|20)[0-9]{2}/); if(!match){ alert('En modelo escribe el AÑO. Ej: Versa 2022'); return; } let anio=parseInt(match[0]); let anioActual=new Date().getFullYear(); let anioMinimo=anioActual-6; if(anio<anioMinimo){ alert('❌ Coche con más de 6 años. Mínimo '+anioMinimo); return; } let res=await fetch('/api/chofer/registrar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nombre:n,tel:t,placas:pl,modelo:mo,anio:anio,pass:p})}); let d=await res.json(); if(!d.ok){alert(d.error);return;} localStorage.setItem('choferActual',JSON.stringify(d.chofer)); verificarSesionChofer();}
 async function choferLogin(){let t=document.getElementById('chofer-tel').value.trim(),c=document.getElementById('chofer-pass').value.trim();let res=await fetch('/api/chofer/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tel:t,pass:c})});let d=await res.json();if(!d.ok){document.getElementById('msg-chofer').innerText=d.error;return;}localStorage.setItem('choferActual',JSON.stringify(d.chofer));verificarSesionChofer();}
 let radarInterval=null, ultimoViajeId=null;
-function verificarSesionChofer(){let a=JSON.parse(localStorage.getItem('choferActual')||'null'); let va=JSON.parse(localStorage.getItem('viajeActivo')||'null'); if(a){document.getElementById('box-login-chofer').style.display='none';document.getElementById('box-viajes-chofer').style.display='block';document.getElementById('nombre-chofer-log').innerText=a.nombre;miChofer=a;if(va){ viajeActivo=va; mostrarViajeActivo(); } else { iniciarRadarAGL(); }}else{document.getElementById('box-login-chofer').style.display='block';document.getElementById('box-viajes-chofer').style.display='none';}}
+async function verificarSesionChofer(){
+  let a=JSON.parse(localStorage.getItem('choferActual')||'null');
+  if(!a){document.getElementById('box-login-chofer').style.display='block';document.getElementById('box-viajes-chofer').style.display='none';return;}
+  document.getElementById('box-login-chofer').style.display='none';
+  document.getElementById('box-viajes-chofer').style.display='block';
+  document.getElementById('nombre-chofer-log').innerText=a.nombre;
+  miChofer=a;
+  // 1. Primero busca en localStorage
+  let va=JSON.parse(localStorage.getItem('viajeActivo')||'null');
+  // 2. Si no hay, pregunta al SERVIDOR - esto recupera el viaje aunque se haya borrado el dato
+  if(!va){
+    try{
+      let r=await fetch('/api/viaje/mi_activo?tel='+a.tel);
+      let d=await r.json();
+      if(d.ok){ va=d.viaje; localStorage.setItem('viajeActivo', JSON.stringify(va)); }
+    }catch(e){}
+  }
+  if(va){ viajeActivo=va; mostrarViajeActivo(); }
+  else { iniciarRadarAGL(); }
+}
 function iniciarRadarAGL(){if(navigator.geolocation){navigator.geolocation.watchPosition(p=>{miPos={lat:p.coords.latitude,lng:p.coords.longitude};fetch('/api/chofer/heartbeat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tel:miChofer.tel,lat:miPos.lat,lng:miPos.lng})});},null,{enableHighAccuracy:true});} if(radarInterval) clearInterval(radarInterval); radarInterval=setInterval(()=>{ mostrarViajesChofer(); }, 3000); mostrarViajesChofer();}
 function mostrarViajesChofer(){let va=localStorage.getItem('viajeActivo'); if(va){ return; } fetch('/api/viajes_cercanos?lat='+miPos.lat+'&lng='+miPos.lng).then(r=>r.json()).then(data=>{
   let lista=document.getElementById('lista-viajes-chofer'); 
@@ -338,7 +357,17 @@ document.getElementById('lista-viajes-chofer').innerHTML=`<div style="background
     }
   },500);
 }
-function finalizarViaje(){if(!confirm('¿Finalizar viaje?')) return;let v=JSON.parse(localStorage.getItem('viajeActivo'));fetch('/api/viaje/finalizar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:v.id})});localStorage.removeItem('viajeActivo');viajeActivo=null;if(radarInterval) clearInterval(radarInterval);alert('✅ Viaje finalizado');location.reload();}
+async function finalizarViaje(){
+  if(!confirm('¿Finalizar viaje?')) return;
+  let v=JSON.parse(localStorage.getItem('viajeActivo'));
+  if(!v) return;
+  await fetch('/api/viaje/finalizar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:v.id})});
+  localStorage.removeItem('viajeActivo');
+  viajeActivo=null;
+  if(radarInterval) clearInterval(radarInterval);
+  alert('✅ Viaje finalizado');
+  location.reload();
+}
 async function adminLogin(){let p=document.getElementById('admin-pass-input').value;let res=await fetch('/api/admin/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:p})});let d=await res.json();if(!d.ok){alert(d.error);return;}localStorage.setItem('adminToken',p);document.getElementById('admin-login').style.display='none';document.getElementById('admin-panel').style.display='block';cargarAdmin();}
 function adminTab(tab){document.getElementById('admin-viajes').style.display=tab==='viajes'?'block':'none';document.getElementById('admin-choferes').style.display=tab==='choferes'?'block':'none';document.getElementById('admin-clientes').style.display=tab==='clientes'?'block':'none';document.getElementById('btn-viajes').style.background=tab==='viajes'?'#000':'#fff';document.getElementById('btn-viajes').style.color=tab==='viajes'?'#fff':'#000';document.getElementById('btn-choferes').style.background=tab==='choferes'?'#000':'#fff';document.getElementById('btn-choferes').style.color=tab==='choferes'?'#fff':'#000';document.getElementById('btn-clientes').style.background=tab==='clientes'?'#000':'#fff';document.getElementById('btn-clientes').style.color=tab==='clientes'?'#fff':'#000';}
 async function cargarAdmin(){let pass=localStorage.getItem('adminToken');let res=await fetch('/api/admin/data',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pass})});let d=await res.json();document.getElementById('admin-viajes').innerHTML=d.viajes.slice().reverse().map(v=>`<div style="border-bottom:1px solid #eee;padding:8px;background:#fff;margin:4px 0;border-radius:8px"><b>${v.fecha} ${v.hora}</b> ${v.cliente} $${v.precio} ${v.kms}km<br><span style="font-size:11px">${v.origen} ${v.parada1?'-> '+v.parada1:''} ${v.parada2?'-> '+v.parada2:''} → ${v.destino}</span> <button onclick="borrarAdmin('viaje',null,'${v.id}')" style="background:#ff5252;color:#fff;border:none;padding:4px 8px;border-radius:6px;float:right">Borrar</button></div>`).join('');document.getElementById('admin-choferes').innerHTML=(d.choferes||[]).map(c=>`<div style="background:#fff;padding:10px;margin:6px 0;border-radius:10px;border:1px solid #ddd"><b>${c.nombre}</b> - ${c.tel}<br>🚗 ${c.modelo||''} (${c.anio||''})<br>🔖 Placas: <b>${c.placas||''}</b> <button onclick="borrarAdmin('chofer','${c.tel}')" style="background:#ff5252;color:#fff;border:none;padding:4px 8px;border-radius:6px;float:right">Borrar</button></div>`).join('')||'Sin choferes';document.getElementById('admin-clientes').innerHTML=(d.clientes||[]).map(c=>`<div style="background:#fff;padding:8px;margin:4px 0;border-radius:8px">${c.nombre} - ${c.tel} <button onclick="borrarAdmin('cliente','${c.tel}')" style="background:#ff5252;color:#fff;border:none;padding:4px 8px;border-radius:6px;float:right">Borrar</button></div>`).join('')||'Sin clientes';}
@@ -415,6 +444,38 @@ def tomar():
     data = request.json or {}
     for v in viajes:
         if v['id'] == data.get('id'):
+            v['status'] = 'en_curso'
+            v['chofer_tel'] = data.get('chofer_tel')
+            v['chofer_nombre'] = data.get('chofer_nombre')
+            v['chofer_placas'] = data.get('chofer_placas')
+            v['chofer_modelo'] = data.get('chofer_modelo')
+            guardar()
+            return jsonify({"ok": True, "viaje": v})
+    return jsonify({"ok": False})
+
+@app.route("/api/viaje/mi_activo")
+def mi_activo():
+    tel = request.args.get('tel','')
+    for v in viajes:
+        if v.get('chofer_tel') == tel and v.get('status') == 'en_curso':
+            return jsonify({"ok": True, "viaje": v})
+    return jsonify({"ok": False})
+
+@app.route("/api/viaje/mi_activo")
+def mi_activo():
+    tel = request.args.get('tel','')
+    for v in viajes:
+        if v.get('chofer_tel') == tel and v.get('status') == 'en_curso':
+            return jsonify({"ok": True, "viaje": v})
+    return jsonify({"ok": False})
+
+@app.route("/api/viaje/tomar", methods=["POST"])
+def tomar():
+    data = request.json or {}
+    for v in viajes:
+        if v['id'] == data.get('id'):
+            if v.get('status') != 'pendiente':
+                return jsonify({"ok": False, "error": "Ya tomado"})
             v['status'] = 'en_curso'
             v['chofer_tel'] = data.get('chofer_tel')
             v['chofer_nombre'] = data.get('chofer_nombre')
