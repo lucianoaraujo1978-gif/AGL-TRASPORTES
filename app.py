@@ -439,20 +439,6 @@ def cli_login():
     sin_pass = {k: v for k, v in f.items() if k != 'pass'}
     return jsonify({"ok": True, "cliente": sin_pass})
 
-@app.route("/api/viaje/tomar", methods=["POST"])
-def tomar():
-    data = request.json or {}
-    for v in viajes:
-        if v['id'] == data.get('id'):
-            v['status'] = 'en_curso'
-            v['chofer_tel'] = data.get('chofer_tel')
-            v['chofer_nombre'] = data.get('chofer_nombre')
-            v['chofer_placas'] = data.get('chofer_placas')
-            v['chofer_modelo'] = data.get('chofer_modelo')
-            guardar()
-            return jsonify({"ok": True, "viaje": v})
-    return jsonify({"ok": False})
-
 @app.route("/api/viaje/mi_activo")
 def mi_activo():
     tel = request.args.get('tel','')
