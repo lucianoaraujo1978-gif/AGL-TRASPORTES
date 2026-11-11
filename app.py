@@ -214,35 +214,58 @@ function trazarLocal(){
     trazarRutaReal(pts);
 }
 async function trazarRutaReal(pts){
+  if(!pts || pts.length < 2) return;
+  if(typeof map === 'undefined' || !map) return;
   try{
     let s=pts.map(p=>p[1]+','+p[0]).join(';');
     let r=await fetch(`https://router.project-osrm.org/route/v1/driving/${s}?overview=full&geometries=geojson`);
-    let j=await r.json(); if(!j.routes||!j.routes[0]) return;
+    let j=await r.json();
+    if(!j.routes||!j.routes[0]) throw new Error('sin ruta OSRM');
     let route=j.routes[0];
     kmActual=Math.round(route.distance/100)/10; if(kmActual<0.8)kmActual=0.8;
     tiempoActual=Math.round(route.duration/60);
     precioActual=calcularPrecio(kmActual);
-    if(routeLine) map.removeLayer(routeLine);
-    if(window.lineaRecorrida) map.removeLayer(window.lineaRecorrida);
-    if(window.lineaFalta) map.removeLayer(window.lineaFalta);
-
-    // Ruta completa de OSRM
     let coordsRuta = route.geometry.coordinates.map(c=>[c[1],c[0]]);
     window.rutaCompleta = coordsRuta;
     window.idxRuta = 0;
+    dibujarLineaRuta(coordsRuta, pts);
+  }catch(e){
+    console.log('OSRM fallo, dibujo linea recta', e);
+    // Si falla OSRM, dibuja linea recta con los pts, pero NO la borres
+    dibujarLineaRuta(pts, pts);
+    try{
+      if(pts.length>=2){
+        // calcula km recto aprox si no hay km
+        if(!kmActual){
+          kmActual=0.8;
+          precioActual=calcularPrecio(kmActual);
+        }
+      }
+    }catch(e2){}
+  }
+  // UI aparte, para que si falla la UI NO borre la linea
+  try{
+    let elDist=document.getElementById('dist');
+    if(elDist) elDist.innerText=kmActual+' km - '+tiempoActual+' min'+(pts.length>2?' - '+(pts.length-2)+' paradas':'');
+    let elPrecio=document.getElementById('precio');
+    if(elPrecio) elPrecio.innerText='$'+precioActual+' MXN';
+    let elBtn=document.getElementById('btnPedir');
+    if(elBtn) elBtn.innerText='Confirmar Flete $'+precioActual+' - '+kmActual+'km';
+  }catch(e){}
+}
 
+function dibujarLineaRuta(coordsRuta, pts){
+  try{
+    if(routeLine) map.removeLayer(routeLine);
+    if(window.lineaRecorrida) map.removeLayer(window.lineaRecorrida);
+    if(window.lineaFalta) map.removeLayer(window.lineaFalta);
     window.lineaRecorrida = L.polyline([], {color:'#999999', weight:6, opacity:0.6}).addTo(map);
     window.lineaFalta = L.polyline(coordsRuta, {color:'#276EF1', weight:6}).addTo(map);
     routeLine = window.lineaFalta;
-
-    document.getElementById('dist').innerText=kmActual+' km - '+tiempoActual+' min'+(pts.length>2?' - '+(pts.length-2)+' paradas':'');
-    document.getElementById('precio').innerText='$'+precioActual+' MXN';
-    document.getElementById('btnPedir').innerText='Confirmar Flete $'+precioActual+' - '+kmActual+'km';
-    map.fitBounds(routeLine.getBounds(),{padding:[80,80]});
-  }catch(e){
-    if(routeLine) map.removeLayer(routeLine);
-    routeLine=L.polyline(pts,{color:'#276EF1',weight:6,dashArray:'8,8'}).addTo(map);
-  }
+    routeLine.bringToFront();
+    try{ map.fitBounds(routeLine.getBounds(),{padding:[80,80]}); }catch(e){}
+    setTimeout(()=>{ try{ map.invalidateSize(); }catch(e){} }, 300);
+  }catch(e){ console.log('error dibujar linea', e); }
 }
 
 // Esto es lo que va borrando la ruta conforme avanzas - solo para chofer
