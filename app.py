@@ -397,12 +397,18 @@ async function verEstadoMiViaje(id){
       }catch(e){ console.log('no se pudo redibujar ruta cliente', e); }
       if(btn) btn.style.display='none';
     }else if(v.status==='finalizado'){
-      clearInterval(intervaloCliente);
-      localStorage.removeItem('viajeActualId');
-      cot.innerHTML=`<b>✅ VIAJE FINALIZADO</b>`;
-      if(btn) btn.style.display='none';
-      setTimeout(()=>{ cot.style.display='none'; },4000);
-    }
+  clearInterval(intervaloCliente);
+  localStorage.removeItem('viajeActualId');
+  cot.innerHTML=`<b>✅ VIAJE FINALIZADO</b><br><span style="font-size:12px">Ya puedes pedir otro</span>`;
+  if(btn) btn.style.display='none';
+  setTimeout(()=>{
+    cot.style.display='none';
+    // LIMPIA TODO PARA EL SIGUIENTE VIAJE
+    try{ borrarTodo(); }catch(e){}
+    // Vuelve a mostrar el boton listo para el siguiente
+    document.getElementById('cotizacion').style.display='none';
+  },3000);
+}
   }catch(e){}
 }
 let viajeActivo=null;
