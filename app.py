@@ -414,7 +414,11 @@ document.getElementById('lista-viajes-chofer').innerHTML=`<div style="background
   async function finalizarViaje(){
   if(window.watchChofer) navigator.geolocation.clearWatch(window.watchChofer);
   if(!confirm('¿Finalizar viaje?')) return;
-  await fetch('/api/viaje/finalizar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:v.id})});
+  let v=null;
+  try{ v=JSON.parse(localStorage.getItem('viajeActivo')||'null'); }catch(e){}
+  try{
+    if(v && v.id) await fetch('/api/viaje/finalizar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:v.id})});
+  }catch(e){ console.log('Error al avisar al servidor, pero igual finalizamos', e); }
   localStorage.removeItem('viajeActivo');
   viajeActivo=null;
   if(radarInterval) clearInterval(radarInterval);
