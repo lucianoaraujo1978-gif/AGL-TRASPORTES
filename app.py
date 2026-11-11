@@ -214,24 +214,58 @@ function trazarLocal(){
     trazarRutaReal(pts);
 }
 async function trazarRutaReal(pts){
-    try{
-      let s=pts.map(p=>p.lng+','+p.lat).join(';');
-      let r=await fetch(`https://router.project-osrm.org/route/v1/driving/${s}?overview=full&geometries=geojson`);
-      let j=await r.json(); if(!j.routes||!j.routes[0]) return;
-      let route=j.routes[0];
-      kmActual=Math.round(route.distance/100)/10; if(kmActual<0.8)kmActual=0.8;
-      tiempoActual=Math.round(route.duration/60);
-      precioActual=calcularPrecio(kmActual);
-      if(routeLine) map.removeLayer(routeLine);
-      routeLine=L.polyline(route.geometry.coordinates.map(c=>[c[1],c[0]]),{color:'#276EF1',weight:6}).addTo(map);
-      document.getElementById('dist').innerText=kmActual+' km - '+tiempoActual+' min'+(pts.length>2?' - '+(pts.length-2)+' paradas':'');
-      document.getElementById('precio').innerText='$'+precioActual+' MXN';
-      document.getElementById('btnPedir').innerText='Confirmar Flete $'+precioActual+' - '+kmActual+'km';
-      map.fitBounds(routeLine.getBounds(),{padding:[80,80]});
-    }catch(e){
-      if(routeLine) map.removeLayer(routeLine);
-      routeLine=L.polyline(pts,{color:'#276EF1',weight:6,dashArray:'8,8'}).addTo(map);
-    }
+  try{
+    let s=pts.map(p=>p[1]+','+p[0]).join(';');
+    let r=await fetch(`https://router.project-osrm.org/route/v1/driving/${s}?overview=full&geometries=geojson`);
+    let j=await r.json(); if(!j.routes||!j.routes[0]) return;
+    let route=j.routes[0];
+    kmActual=Math.round(route.distance/100)/10; if(kmActual<0.8)kmActual=0.8;
+    tiempoActual=Math.round(route.duration/60);
+    precioActual=calcularPrecio(kmActual);
+    if(routeLine) map.removeLayer(routeLine);
+    if(window.lineaRecorrida) map.removeLayer(window.lineaRecorrida);
+    if(window.lineaFalta) map.removeLayer(window.lineaFalta);
+
+    // Ruta completa de OSRM
+    let coordsRuta = route.geometry.coordinates.map(c=>[c[1],c[0]]);
+    window.rutaCompleta = coordsRuta;
+    window.idxRuta = 0;
+
+    window.lineaRecorrida = L.polyline([], {color:'#999999', weight:6, opacity:0.6}).addTo(map);
+    window.lineaFalta = L.polyline(coordsRuta, {color:'#276EF1', weight:6}).addTo(map);
+    routeLine = window.lineaFalta;
+
+    document.getElementById('dist').innerText=kmActual+' km - '+tiempoActual+' min'+(pts.length>2?' - '+(pts.length-2)+' paradas':'');
+    document.getElementById('precio').innerText='$'+precioActual+' MXN';
+    document.getElementById('btnPedir').innerText='Confirmar Flete $'+precioActual+' - '+kmActual+'km';
+    map.fitBounds(routeLine.getBounds(),{padding:[80,80]});
+  }catch(e){
+    if(routeLine) map.removeLayer(routeLine);
+    routeLine=L.polyline(pts,{color:'#276EF1',weight:6,dashArray:'8,8'}).addTo(map);
+  }
+}
+
+// Esto es lo que va borrando la ruta conforme avanzas - solo para chofer
+function iniciarSeguimientoChofer(){
+  if(window.watchChofer) navigator.geolocation.clearWatch(window.watchChofer);
+  window.watchChofer = navigator.geolocation.watchPosition(pos => {
+    let lat = pos.coords.latitude, lng = pos.coords.longitude;
+    if(!window.rutaCompleta || !window.lineaFalta) return;
+    if(window.marcadorChofer) window.marcadorChofer.setLatLng([lat, lng]);
+
+    let mejor = 0, mejorDist = 999999;
+    window.rutaCompleta.forEach((p, i) => {
+      let d = Math.hypot(p[0]-lat, p[1]-lng);
+      if(d < mejorDist){ mejorDist = d; mejor = i; }
+    });
+    if(mejor > window.idxRuta) window.idxRuta = mejor;
+
+    let recorrido = window.rutaCompleta.slice(0, window.idxRuta+1);
+    recorrido.push([lat, lng]);
+    let falta = [[lat, lng]].concat(window.rutaCompleta.slice(window.idxRuta+1));
+    window.lineaRecorrida.setLatLngs(recorrido);
+    window.lineaFalta.setLatLngs(falta);
+  }, ()=>{}, {enableHighAccuracy:true, maximumAge:1000, timeout:10000});
 }
 let intervaloCliente=null;
 async function pedir(){
@@ -327,6 +361,7 @@ let gmapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${miPos.lat},${miP
 document.getElementById('lista-viajes-chofer').innerHTML=`<div style="background:#000;color:#fff;padding:12px;border-radius:12px;margin-bottom:10px"><b style="font-size:14px">💰 $${v.precio} • ${v.kms}km • ${v.fecha} ${v.hora}</b><br><span style="font-size:12px">${v.cliente} • ${v.cliente_tel}</span></div><div style="background:#fff;padding:14px;border-radius:14px;border:1px solid #ddd"><div style="font-size:12px;line-height:1.6"><b style="color:#00c853">● ORIGEN:</b> ${v.origen}<br>${Number(v.parada1_lat)?`<b style="color:#ffcc00">● P1:</b> ${v.parada1 || v.parada1_lat+','+v.parada1_lng}<br>`:''}${Number(v.parada2_lat)?`<b style="color:#ff9500">● P2:</b> ${v.parada2 || v.parada2_lat+','+v.parada2_lng}<br>`:''}${Number(v.parada3_lat)?`<b style="color:#00bfff">● P3:</b> ${v.parada3 || v.parada3_lat+','+v.parada3_lng}<br>`:''}<b style="color:#ff3b30">● DESTINO:</b> ${v.destino}</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px"><a href="https://www.google.com/maps/dir/?api=1&destination=${v.origen_lat},${v.origen_lng}" target="_blank" style="display:block;background:#276EF1;color:#fff;text-align:center;padding:10px;border-radius:8px;text-decoration:none;font-weight:800;font-size:11px">📍 ORIGEN</a><a href="${gmapsUrl}" target="_blank" style="display:block;background:#000;color:#FFD700;border:1px solid #FFD700;text-align:center;padding:10px;border-radius:8px;text-decoration:none;font-weight:800;font-size:11px">🗺️ RECORRIDO COMPLETO</a><a href="https://waze.com/ul?ll=${v.origen_lat},${v.origen_lng}&navigate=yes" target="_blank" style="display:block;background:#00c853;color:#fff;text-align:center;padding:10px;border-radius:8px;text-decoration:none;font-weight:800;font-size:11px">🚗 WAZE</a><a href="tel:${v.cliente_tel}" style="display:block;background:#fff;border:1px solid #000;color:#000;text-align:center;padding:10px;border-radius:8px;text-decoration:none;font-weight:800;font-size:11px">📞 LLAMAR</a></div><a href="https://wa.me/52${v.cliente_tel}" target="_blank" style="display:block;background:#25D366;color:#fff;text-align:center;padding:10px;border-radius:8px;text-decoration:none;font-weight:800;font-size:12px;margin-top:6px">💬 WHATSAPP</a><button onclick="finalizarViaje()" style="width:100%;background:#ff3b30;color:#fff;border:none;padding:12px;border-radius:8px;font-weight:800;margin-top:8px">🏁 FINALIZAR VIAJE</button></div><div id="map-chofer" style="height:400px;margin-top:10px;border-radius:12px;border:2px solid #000"></div>`;
   setTimeout(async()=>{
     let mc=L.map('map-chofer').setView([v.origen_lat, v.origen_lng],13);
+    window.mapaChofer = mc;
     L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',{subdomains:['mt0','mt1','mt2','mt3']}).addTo(mc);
     let pts=[];
     pts.push([v.origen_lat, v.origen_lng]);
@@ -339,28 +374,46 @@ document.getElementById('lista-viajes-chofer').innerHTML=`<div style="background
     if(v.parada2_lat) L.marker([v.parada2_lat, v.parada2_lng],{icon:naranjaIcon}).addTo(mc).bindPopup("P2");
     if(v.parada3_lat) L.marker([v.parada3_lat, v.parada3_lng],{icon:azulIcon}).addTo(mc).bindPopup("P3");
     L.marker([v.destino_lat, v.destino_lng],{icon:rojoIcon}).addTo(mc).bindPopup("DESTINO");
-    try{
-      let s=pts.map(p=>p[1]+','+p[0]).join(';');
+        try{
+      let ptsRuta = [[miPos.lat, miPos.lng]].concat(pts);
+      let s=ptsRuta.map(p=>p[1]+','+p[0]).join(';');
       let r=await fetch(`https://router.project-osrm.org/route/v1/driving/${s}?overview=full&geometries=geojson`);
       let j=await r.json();
-      if(j.routes && j.routes[0]){
-        let coords=j.routes[0].geometry.coordinates.map(c=>[c[1],c[0]]);
-        let line=L.polyline(coords,{color:'#276EF1',weight:6}).addTo(mc);
-        mc.fitBounds(line.getBounds(),{padding:[30,30]});
-      } else {
-        let line=L.polyline(pts,{color:'#276EF1',weight:5}).addTo(mc);
-        mc.fitBounds(line.getBounds(),{padding:[30,30]});
-      }
+      let coords = (j.routes && j.routes[0]) ? j.routes[0].geometry.coordinates.map(c=>[c[1],c[0]]) : ptsRuta;
+      window.rutaCompleta = coords;
+      window.idxRuta = 0;
+      if(window.lineaRecorrida) mc.removeLayer(window.lineaRecorrida);
+      if(window.lineaFalta) mc.removeLayer(window.lineaFalta);
+      if(window.marcadorChofer) mc.removeLayer(window.marcadorChofer);
+      window.lineaRecorrida = L.polyline([], {color:'#999999', weight:6, opacity:0.6}).addTo(mc);
+      window.lineaFalta = L.polyline(coords, {color:'#276EF1', weight:6}).addTo(mc);
+      window.marcadorChofer = L.circleMarker([miPos.lat, miPos.lng], {radius:9, color:'#fff', fillColor:'#0066ff', fillOpacity:1, weight:3}).addTo(mc);
+      mc.fitBounds(window.lineaFalta.getBounds(),{padding:[30,30]});
+      if(window.watchChofer) navigator.geolocation.clearWatch(window.watchChofer);
+      window.watchChofer = navigator.geolocation.watchPosition(pos => {
+        let lat = pos.coords.latitude, lng = pos.coords.longitude;
+        window.marcadorChofer.setLatLng([lat, lng]);
+        let mejor = 0, mejorDist = 999999;
+        window.rutaCompleta.forEach((p, i) => {
+          let d = Math.hypot(p[0]-lat, p[1]-lng);
+          if(d < mejorDist){ mejorDist = d; mejor = i; }
+        });
+        if(mejor > window.idxRuta) window.idxRuta = mejor;
+        let recorrido = window.rutaCompleta.slice(0, window.idxRuta+1);
+        recorrido.push([lat, lng]);
+        let falta = [[lat, lng]].concat(window.rutaCompleta.slice(window.idxRuta+1));
+        window.lineaRecorrida.setLatLngs(recorrido);
+        window.lineaFalta.setLatLngs(falta);
+      }, ()=>{}, {enableHighAccuracy:true, maximumAge:1000, timeout:10000});
     }catch(e){
       let line=L.polyline(pts,{color:'#276EF1',weight:5}).addTo(mc);
       mc.fitBounds(line.getBounds(),{padding:[30,30]});
     }
   },500);
 }
-async function finalizarViaje(){
+  async function finalizarViaje(){
+  if(window.watchChofer) navigator.geolocation.clearWatch(window.watchChofer);
   if(!confirm('¿Finalizar viaje?')) return;
-  let v=JSON.parse(localStorage.getItem('viajeActivo'));
-  if(!v) return;
   await fetch('/api/viaje/finalizar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:v.id})});
   localStorage.removeItem('viajeActivo');
   viajeActivo=null;
