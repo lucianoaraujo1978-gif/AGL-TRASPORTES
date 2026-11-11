@@ -341,7 +341,39 @@ async function clienteRegistrar(){let n=document.getElementById('cli-reg-nombre'
 async function clienteLogin(){let t=document.getElementById('cli-tel').value.trim(),c=document.getElementById('cli-pass').value.trim();let res=await fetch('/api/cliente/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tel:t,pass:c})});let d=await res.json();if(!d.ok){document.getElementById('msg-cli').innerText=d.error;return;}localStorage.setItem('clienteActual',JSON.stringify(d.cliente));verificarSesionClienteLogged();}
 function verificarSesionCliente(){let ca=JSON.parse(localStorage.getItem('clienteActual')||'null'); initMap(); if(ca){document.getElementById('box-login-cliente').style.display='none';document.getElementById('box-cliente-viaje').style.display='block';setTimeout(()=>{if(map) map.invalidateSize();},400);}else{document.getElementById('box-login-cliente').style.display='block';document.getElementById('box-cliente-viaje').style.display='none';}}
 function verificarSesionClienteLogged(){initMap();document.getElementById('box-login-cliente').style.display='none';document.getElementById('box-cliente-viaje').style.display='block';setTimeout(()=>{if(map) map.invalidateSize();},400);let idGuardado=localStorage.getItem('viajeActualId');if(idGuardado){if(intervaloCliente) clearInterval(intervaloCliente);intervaloCliente=setInterval(()=>verEstadoMiViaje(idGuardado),4000);verEstadoMiViaje(idGuardado);}}
-async function verEstadoMiViaje(id){try{let r=await fetch('/api/viaje/estado/'+id);let v=await r.json();if(!v||!v.id) return;let cot=document.getElementById('cotizacion');let btn=document.getElementById('btnPedir');cot.style.display='block';if(v.status==='pendiente'){cot.innerHTML=`<b>🔍 BUSCANDO CHOFER...</b><br><span style="font-size:12px">${v.origen} → ${v.destino}</span><br>💰 $${v.precio}`;if(btn) btn.style.display='block';}else if(v.status==='tomado'||v.status==='en_curso'){cot.innerHTML=`<div style="background:#000;color:#fff;padding:12px;border-radius:12px;text-align:left"><b style="color:#00e676">✅ CHOFER EN CAMINO </b><br><b>Chofer: ${v.chofer_nombre}</b><br>🚗 ${v.chofer_modelo}<br>🔖 PLACA: <b style="font-size:18px">${v.chofer_placas}</b><br><a href="tel:${v.chofer_tel}" style="display:block;background:#fff;color:#000;padding:10px;border-radius:8px;margin-top:8px;text-align:center;text-decoration:none;font-weight:800">📞 LLAMAR CHOFER ${v.chofer_tel}</a></div>`;if(btn) btn.style.display='none';}else if(v.status==='finalizado'){clearInterval(intervaloCliente);localStorage.removeItem('viajeActualId');cot.innerHTML=`<b>✅ VIAJE FINALIZADO</b>`;if(btn) btn.style.display='none';setTimeout(()=>{ cot.style.display='none'; },4000);}}catch(e){}}
+async function verEstadoMiViaje(id){
+  try{
+    let r=await fetch('/api/viaje/estado/'+id);
+    let v=await r.json();
+    if(!v||!v.id) return;
+    let cot=document.getElementById('cotizacion');
+    let btn=document.getElementById('btnPedir');
+    cot.style.display='block';
+    if(v.status==='pendiente'){
+      cot.innerHTML=`<b>🔍 BUSCANDO CHOFER...</b><br><span style="font-size:12px">${v.origen} → ${v.destino}</span><br>💰 $${v.precio}`;
+      if(btn) btn.style.display='block';
+    }else if(v.status==='tomado'||v.status==='en_curso'){
+      cot.innerHTML=`<div style="background:#000;color:#fff;padding:12px;border-radius:12px;text-align:left"><b style="color:#00e676">✅ CHOFER EN CAMINO </b><br><b>Chofer: ${v.chofer_nombre}</b><br>🚗 ${v.chofer_modelo}<br>🔖 PLACA: <b style="font-size:18px">${v.chofer_placas}</b><br><a href="tel:${v.chofer_tel}" style="display:block;background:#fff;color:#000;padding:10px;border-radius:8px;margin-top:8px;text-align:center;text-decoration:none;font-weight:800">📞 LLAMAR CHOFER ${v.chofer_tel}</a></div>`;
+      // VOLVER A DIBUJAR RUTA DEL CLIENTE
+      try{
+        let ptsCliente=[];
+        if(v.origen_lat) ptsCliente.push([Number(v.origen_lat), Number(v.origen_lng)]);
+        if(Number(v.parada1_lat)) ptsCliente.push([Number(v.parada1_lat), Number(v.parada1_lng)]);
+        if(Number(v.parada2_lat)) ptsCliente.push([Number(v.parada2_lat), Number(v.parada2_lng)]);
+        if(Number(v.parada3_lat)) ptsCliente.push([Number(v.parada3_lat), Number(v.parada3_lng)]);
+        if(v.destino_lat) ptsCliente.push([Number(v.destino_lat), Number(v.destino_lng)]);
+        if(ptsCliente.length>=2 && typeof trazarRutaReal==='function') trazarRutaReal(ptsCliente);
+      }catch(e){ console.log('no se pudo redibujar ruta cliente', e); }
+      if(btn) btn.style.display='none';
+    }else if(v.status==='finalizado'){
+      clearInterval(intervaloCliente);
+      localStorage.removeItem('viajeActualId');
+      cot.innerHTML=`<b>✅ VIAJE FINALIZADO</b>`;
+      if(btn) btn.style.display='none';
+      setTimeout(()=>{ cot.style.display='none'; },4000);
+    }
+  }catch(e){}
+}
 let viajeActivo=null;
 async function tomarViaje(id){let ch=JSON.parse(localStorage.getItem('choferActual'));let res=await fetch('/api/viaje/tomar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:id,chofer_tel:ch.tel,chofer_nombre:ch.nombre,chofer_placas:ch.placas||'',chofer_modelo:ch.modelo||''})});let d=await res.json();if(!d.ok) return alert('Ya lo tomó otro');viajeActivo=d.viaje;localStorage.setItem('viajeActivo', JSON.stringify(viajeActivo));mostrarViajeActivo();}
 function mostrarViajeActivo(){
