@@ -213,11 +213,18 @@ function trazarLocal(){
     document.getElementById('btnPedir').style.display='block';
     trazarRutaReal(pts);
 }
-async function trazarRutaReal(pts){
-  if(!pts || pts.length < 2) return;
+async function trazarRutaReal(ptsRaw){
+  if(!ptsRaw || ptsRaw.length < 2) return;
   if(typeof map === 'undefined' || !map) return;
+  // FIX: convertir LatLng de Leaflet a [lat,lng] normal
+  let pts = ptsRaw.map(p=>{
+    if(Array.isArray(p)) return [Number(p[0]), Number(p[1])];
+    if(p && typeof p.lat === 'number') return [p.lat, p.lng];
+    return p;
+  });
   try{
     let s=pts.map(p=>p[1]+','+p[0]).join(';');
+    console.log('OSRM URL:', s);
     let r=await fetch(`https://router.project-osrm.org/route/v1/driving/${s}?overview=full&geometries=geojson`);
     let j=await r.json();
     if(!j.routes||!j.routes[0]) throw new Error('sin ruta OSRM');
@@ -228,22 +235,11 @@ async function trazarRutaReal(pts){
     let coordsRuta = route.geometry.coordinates.map(c=>[c[1],c[0]]);
     window.rutaCompleta = coordsRuta;
     window.idxRuta = 0;
-    dibujarLineaRuta(coordsRuta, pts);
+    dibujarLineaRuta(coordsRuta);
   }catch(e){
     console.log('OSRM fallo, dibujo linea recta', e);
-    // Si falla OSRM, dibuja linea recta con los pts, pero NO la borres
-    dibujarLineaRuta(pts, pts);
-    try{
-      if(pts.length>=2){
-        // calcula km recto aprox si no hay km
-        if(!kmActual){
-          kmActual=0.8;
-          precioActual=calcularPrecio(kmActual);
-        }
-      }
-    }catch(e2){}
+    dibujarLineaRuta(pts);
   }
-  // UI aparte, para que si falla la UI NO borre la linea
   try{
     let elDist=document.getElementById('dist');
     if(elDist) elDist.innerText=kmActual+' km - '+tiempoActual+' min'+(pts.length>2?' - '+(pts.length-2)+' paradas':'');
@@ -254,11 +250,11 @@ async function trazarRutaReal(pts){
   }catch(e){}
 }
 
-function dibujarLineaRuta(coordsRuta, pts){
+function dibujarLineaRuta(coordsRuta){
   try{
-    if(routeLine) map.removeLayer(routeLine);
-    if(window.lineaRecorrida) map.removeLayer(window.lineaRecorrida);
-    if(window.lineaFalta) map.removeLayer(window.lineaFalta);
+    if(routeLine){ try{map.removeLayer(routeLine);}catch(e){} }
+    if(window.lineaRecorrida){ try{map.removeLayer(window.lineaRecorrida);}catch(e){} }
+    if(window.lineaFalta){ try{map.removeLayer(window.lineaFalta);}catch(e){} }
     window.lineaRecorrida = L.polyline([], {color:'#999999', weight:6, opacity:0.6}).addTo(map);
     window.lineaFalta = L.polyline(coordsRuta, {color:'#276EF1', weight:6}).addTo(map);
     routeLine = window.lineaFalta;
