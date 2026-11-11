@@ -216,30 +216,42 @@ function trazarLocal(){
 async function trazarRutaReal(ptsRaw){
   if(!ptsRaw || ptsRaw.length < 2) return;
   if(typeof map === 'undefined' || !map) return;
-  // FIX: convertir LatLng de Leaflet a [lat,lng] normal
   let pts = ptsRaw.map(p=>{
     if(Array.isArray(p)) return [Number(p[0]), Number(p[1])];
     if(p && typeof p.lat === 'number') return [p.lat, p.lng];
     return p;
   });
-  try{
-    let s=pts.map(p=>p[1]+','+p[0]).join(';');
-    console.log('OSRM URL:', s);
-    let r=await fetch(`https://router.project-osrm.org/route/v1/driving/${s}?overview=full&geometries=geojson`);
-    let j=await r.json();
-    if(!j.routes||!j.routes[0]) throw new Error('sin ruta OSRM');
-    let route=j.routes[0];
-    kmActual=Math.round(route.distance/100)/10; if(kmActual<0.8)kmActual=0.8;
-    tiempoActual=Math.round(route.duration/60);
-    precioActual=calcularPrecio(kmActual);
-    let coordsRuta = route.geometry.coordinates.map(c=>[c[1],c[0]]);
+  let s = pts.map(p=>p[1]+','+p[0]).join(';');
+  let coordsRuta = null;
+  let urls = [
+    `https://router.project-osrm.org/route/v1/driving/${s}?overview=full&geometries=geojson`,
+    `https://routing.openstreetmap.de/routed-car/route/v1/driving/${s}?overview=full&geometries=geojson`,
+    `https://router.project-osrm.org/route/v1/driving/${s}?overview=simplified&geometries=geojson`
+  ];
+  for(let url of urls){
+    try{
+      console.log('Probando OSRM:', url);
+      let r = await fetch(url);
+      let j = await r.json();
+      if(j.routes && j.routes[0]){
+        let route = j.routes[0];
+        kmActual = Math.round(route.distance/100)/10; if(kmActual<0.8) kmActual=0.8;
+        tiempoActual = Math.round(route.duration/60);
+        precioActual = calcularPrecio(kmActual);
+        coordsRuta = route.geometry.coordinates.map(c=>[c[1],c[0]]);
+        console.log('OSRM OK con:', url, 'puntos:', coordsRuta.length);
+        break;
+      }
+    }catch(e){ console.log('Fallo este OSRM:', url, e); }
+  }
+  if(!coordsRuta){
+    console.log('Ningun OSRM jalo, linea recta');
+    coordsRuta = pts;
+  } else {
     window.rutaCompleta = coordsRuta;
     window.idxRuta = 0;
-    dibujarLineaRuta(coordsRuta);
-  }catch(e){
-    console.log('OSRM fallo, dibujo linea recta', e);
-    dibujarLineaRuta(pts);
   }
+  dibujarLineaRuta(coordsRuta);
   try{
     let elDist=document.getElementById('dist');
     if(elDist) elDist.innerText=kmActual+' km - '+tiempoActual+' min'+(pts.length>2?' - '+(pts.length-2)+' paradas':'');
