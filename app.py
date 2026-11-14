@@ -328,6 +328,24 @@ async function pedir(){
     parada3_lat:p3.lat, parada3_lng:p3.lng,
     kms:kmActual,precio:precioActual,status:'pendiente',timestamp:new Date().toISOString()
   };
+  // GUARDAR EN HOJA ACUMULADOS AGL
+fetch("https://script.google.com/macros/s/AKfycbysDosmHcIK8o0d53lgNW6mSF2S3xndQaZaHDCS1Km2d0zRBT-RIe7U2aIdwJDTf5Gr/exec", {
+  method: "POST",
+  mode: "no-cors",
+  headers: {"Content-Type": "application/json"},
+  body: JSON.stringify({
+    id: id,
+    fecha: data.fecha,
+    hora: data.hora,
+    cliente: data.cliente,
+    cliente_tel: data.cliente_tel,
+    origen: data.origen,
+    destino: data.destino,
+    kms: data.kms,
+    precio: data.precio,
+    status: data.status
+  })
+}).catch(e => console.log("No se guardó en Sheet:", e));
   await fetch('/api/viaje',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
   localStorage.setItem('viajeActualId', id);
   alert('✅ Flete CONFIRMADO $'+precioActual+' CON '+( (p1.lat?1:0)+(p2.lat?1:0)+(p3.lat?1:0) )+' PARADAS - '+kmActual+'km');
