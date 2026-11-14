@@ -198,7 +198,23 @@ function quitarParada(n){
 }
 function miUbicacion(){navigator.geolocation.getCurrentPosition(p=>{let ll={lat:p.coords.latitude,lng:p.coords.longitude};miPos=ll;crearOrigen(ll);if(map) map.setView([ll.lat,ll.lng],16);});}
 function calcDist(lat1,lon1,lat2,lon2){let R=6371;let dLat=(lat2-lat1)*Math.PI/180;let dLon=(lon2-lon1)*Math.PI/180;let a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));}
-function calcularPrecio(km){let arranque=40; let costoKm=10; let precio; if(km<=1){ precio=arranque; } else { precio=Math.round(arranque+((km-1)*costoKm)); } if(precio<80) precio=80; let extra=0; if(parada1Marker) extra++; if(parada2Marker) extra++; if(parada3Marker) extra++; precio+=extra*20; return precio;}
+function calcularPrecio(km){
+  let arranque=30;
+  let costoKm=8;
+  let precio;
+  if(km<=1){
+    precio=arranque;
+  } else {
+    precio=Math.round(arranque+((km-1)*costoKm));
+  }
+  if(precio<45) precio=45;
+  let extra=0;
+  if(parada1Marker) extra++;
+  if(parada2Marker) extra++;
+  if(parada3Marker) extra++;
+  precio+=extra*10;
+  return precio;
+}
 function trazarLocal(){
     if(!origenMarker) return; let pts=[]; pts.push(origenMarker.getLatLng());
     if(parada1Marker) pts.push(parada1Marker.getLatLng()); if(parada2Marker) pts.push(parada2Marker.getLatLng()); if(parada3Marker) pts.push(parada3Marker.getLatLng()); if(destinoMarker) pts.push(destinoMarker.getLatLng());
