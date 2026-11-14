@@ -117,7 +117,7 @@ input{flex:1;border:none;outline:none;font-size:13px;font-weight:600;background:
 <div id="box-login-cliente" style="padding:20px;max-width:400px;margin:70px auto 0;background:#fff;position:relative;z-index:20;border-radius:16px"><h2 style="text-align:center">👤 Cliente</h2><div id="form-login-c"><input id="cli-tel" class="inp" placeholder="Celular"><input id="cli-pass" class="inp" type="password" placeholder="Contraseña"><button onclick="clienteLogin()" style="width:100%;padding:13px;background:#000;color:#fff;border:none;border-radius:10px">ENTRAR</button><p style="text-align:center;margin:10px 0">¿Nuevo?</p><button onclick="mostrarRegistroCli()" style="width:100%;padding:11px;background:#fff;border:1px solid #000;border-radius:10px">REGISTRARME</button><button onclick="volverAlInicio()" style="width:100%;margin-top:10px;padding:11px;background:#eee;border:none;border-radius:10px">⬅ MENU</button><p id="msg-cli" style="color:red;text-align:center;font-size:12px"></p></div><div id="form-registro-c" style="display:none"><input id="cli-reg-nombre" class="inp" placeholder="Nombre"><input id="cli-reg-tel" class="inp" placeholder="Celular"><input id="cli-reg-pass" class="inp" type="password" placeholder="Contraseña"><button onclick="clienteRegistrar()" style="width:100%;padding:13px;background:#00c853;color:#fff;border:none;border-radius:10px">CREAR CUENTA</button><button onclick="mostrarLoginCli()" style="width:100%;padding:10px;background:none;border:none;color:#1976d2">Ya tengo cuenta</button></div></div>
 <div id="box-cliente-viaje" style="display:none"><div id="map"></div><button onclick="miUbicacion()" style="position:fixed;bottom:160px;right:14px;z-index:12;width:50px;height:50px;background:#fff;border:none;border-radius:50%;box-shadow:0 4px 18px rgba(0,0,0,.3)">📍</button>
 <div class="top-bar"><button class="menu-btn" onclick="toggleMenu()">☰</button><div class="search-card">
-<div class="item"><div class="dot o"></div><input id="origen" placeholder="Origen - toca el mapa"></div>
+<div class="item"><div class="dot o"></div><input id="origen" placeholder="Origen - tu ubicación"><button onclick="cambiarOrigen()" style="border:none;background:#eef5ff;padding:6px 8px;border-radius:8px;font-size:11px;font-weight:800;white-space:nowrap">📍 CAMBIAR</button><button onclick="usarMiUbicacionComoOrigen()" style="border:none;background:#00c853;color:#fff;padding:6px 8px;border-radius:8px;font-size:11px;font-weight:800;white-space:nowrap">MI UBIC.</button></div>
 <div class="item" id="boxP1" style="display:none"><div class="dot" style="background:#ffcc00"></div><input id="parada1" placeholder="Parada 1"><button onclick="quitarParada(1)" style="border:none;background:#eee;width:26px;height:26px;border-radius:50%">✕</button></div>
 <div class="item" id="boxP2" style="display:none"><div class="dot" style="background:#ff9500"></div><input id="parada2" placeholder="Parada 2"><button onclick="quitarParada(2)" style="border:none;background:#eee;width:26px;height:26px;border-radius:50%">✕</button></div>
 <div class="item" id="boxP3" style="display:none"><div class="dot" style="background:#00e5ff"></div><input id="parada3" placeholder="Parada 3"><button onclick="quitarParada(3)" style="border:none;background:#eee;width:26px;height:26px;border-radius:50%">✕</button></div>
@@ -152,13 +152,20 @@ input{flex:1;border:none;outline:none;font-size:13px;font-weight:600;background:
 <div id="vista-admin" style="display:none"><div id="admin-login" style="padding:20px;max-width:400px;margin:80px auto;background:#fff;border-radius:16px"><h2 style="text-align:center">🔐 ADMIN</h2><input id="admin-pass-input" type="password" class="inp" placeholder="AGL2026"><button onclick="adminLogin()" style="width:100%;padding:14px;background:#000;color:#fff;border:none;border-radius:10px">ENTRAR</button><button onclick="volverAlInicio()" style="width:100%;margin-top:10px;padding:12px;background:#eee;border:none;border-radius:12px">⬅ VOLVER</button></div><div id="admin-panel" style="display:none;padding:12px;background:#eef2f7;min-height:100vh"><h1>🔐 ADMIN V49</h1><div style="display:flex;gap:6px;margin:12px 0"><button onclick="adminTab('viajes')" id="btn-viajes" style="flex:1;padding:12px;background:#000;color:#fff;border:none;border-radius:10px;font-weight:800">Viajes</button><button onclick="adminTab('choferes')" id="btn-choferes" style="flex:1;padding:12px;background:#fff;border:1px solid #000;border-radius:10px;font-weight:800">Choferes</button><button onclick="adminTab('clientes')" id="btn-clientes" style="flex:1;padding:12px;background:#fff;border:1px solid #000;border-radius:10px;font-weight:800">Clientes</button></div><div id="admin-viajes"></div><div id="admin-choferes" style="display:none"></div><div id="admin-clientes" style="display:none"></div><button onclick="volverAlInicio()" style="margin-top:12px;padding:12px;width:100%;background:#000;color:#fff;border:none;border-radius:10px">Volver</button></div></div>
 <script>
 let map=null,origenMarker=null,destinoMarker=null,parada1Marker=null,parada2Marker=null,parada3Marker=null,routeLine,kmActual=0,precioActual=0,tiempoActual=0,numParadasVisibles=0,miChofer=null,miPos={lat:21.8853,lng:-102.2916},origenLatLng=null,destinoLatLng=null;
+let modoCambiarOrigen=false;    
 function toggleMenu(){document.getElementById('menu').classList.toggle('act');document.getElementById('overlay').classList.toggle('act');}
 function initMap(){
   if(map){setTimeout(()=>map.invalidateSize(),200);return;}
   map=L.map('map',{zoomControl:false}).setView([21.8853,-102.2916],13);
   L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',{subdomains:['mt0','mt1','mt2','mt3'],maxZoom:20}).addTo(map);
   map.on('click',e=>{
-    if(!origenMarker){crearOrigen(e.latlng);return;}
+  // Si le picó a CAMBIAR, el siguiente toque mueve el ORIGEN aunque ya exista
+  if(modoCambiarOrigen){
+    crearOrigen(e.latlng);
+    modoCambiarOrigen = false;
+    return;
+  }
+  if(!origenMarker){crearOrigen(e.latlng);return;}
     if(numParadasVisibles>=1&&!parada1Marker){crearParada1(e.latlng);return;}
     if(numParadasVisibles>=2&&!parada2Marker){crearParada2(e.latlng);return;}
     if(numParadasVisibles>=3&&!parada3Marker){crearParada3(e.latlng);return;}
@@ -197,6 +204,36 @@ function quitarParada(n){
   numParadasVisibles=visibles; document.getElementById('txt-paradas').innerText=numParadasVisibles+' / 3 paradas'; trazarLocal();
 }
 function miUbicacion(){navigator.geolocation.getCurrentPosition(p=>{let ll={lat:p.coords.latitude,lng:p.coords.longitude};miPos=ll;crearOrigen(ll);if(map) map.setView([ll.lat,ll.lng],16);});}
+function ubicarClienteAutomatico(){
+  if(!navigator.geolocation) return;
+  if(!map){ setTimeout(ubicarClienteAutomatico, 500); return; }
+  navigator.geolocation.getCurrentPosition(p=>{
+    let lat = p.coords.latitude, lng = p.coords.longitude;
+    miPos = {lat: lat, lng: lng};
+    if(window.marcadorCliente){
+      window.marcadorCliente.setLatLng([lat, lng]);
+    } else {
+      window.marcadorCliente = L.circleMarker([lat, lng], {radius:10, color:'#fff', fillColor:'#0066ff', fillOpacity:1, weight:3}).addTo(map);
+    }
+    if(!origenMarker){
+      crearOrigen({lat: lat, lng: lng});
+    }
+    map.setView([lat, lng], 16);
+  }, ()=>{}, {enableHighAccuracy:true, timeout:10000});
+}
+function cambiarOrigen(){
+  modoCambiarOrigen = true;
+  alert('Toca el mapa donde quieres que inicie el viaje');
+}
+function usarMiUbicacionComoOrigen(){
+  modoCambiarOrigen = false;
+  if(miPos.lat){
+    crearOrigen({lat: miPos.lat, lng: miPos.lng});
+    map.setView([miPos.lat, miPos.lng], 16);
+  } else {
+    ubicarClienteAutomatico();
+  }
+}
 function calcDist(lat1,lon1,lat2,lon2){let R=6371;let dLat=(lat2-lat1)*Math.PI/180;let dLon=(lon2-lon1)*Math.PI/180;let a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));}
 function calcularPrecio(km){
   let arranque=30;
@@ -404,8 +441,8 @@ function mostrarRegistroCli(){document.getElementById('form-login-c').style.disp
 function mostrarLoginCli(){document.getElementById('form-registro-c').style.display='none';document.getElementById('form-login-c').style.display='block';}
 async function clienteRegistrar(){let n=document.getElementById('cli-reg-nombre').value.trim(),t=document.getElementById('cli-reg-tel').value.trim(),p=document.getElementById('cli-reg-pass').value.trim();let res=await fetch('/api/cliente/registrar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nombre:n,tel:t,pass:p})});let d=await res.json();if(!d.ok){alert(d.error);return;}localStorage.setItem('clienteActual',JSON.stringify(d.cliente));verificarSesionClienteLogged();}
 async function clienteLogin(){let t=document.getElementById('cli-tel').value.trim(),c=document.getElementById('cli-pass').value.trim();let res=await fetch('/api/cliente/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tel:t,pass:c})});let d=await res.json();if(!d.ok){document.getElementById('msg-cli').innerText=d.error;return;}localStorage.setItem('clienteActual',JSON.stringify(d.cliente));verificarSesionClienteLogged();}
-function verificarSesionCliente(){let ca=JSON.parse(localStorage.getItem('clienteActual')||'null'); initMap(); if(ca){document.getElementById('box-login-cliente').style.display='none';document.getElementById('box-cliente-viaje').style.display='block';setTimeout(()=>{if(map) map.invalidateSize();},400);}else{document.getElementById('box-login-cliente').style.display='block';document.getElementById('box-cliente-viaje').style.display='none';}}
-function verificarSesionClienteLogged(){initMap();document.getElementById('box-login-cliente').style.display='none';document.getElementById('box-cliente-viaje').style.display='block';setTimeout(()=>{if(map) map.invalidateSize();},400);let idGuardado=localStorage.getItem('viajeActualId');if(idGuardado){if(intervaloCliente) clearInterval(intervaloCliente);intervaloCliente=setInterval(()=>verEstadoMiViaje(idGuardado),4000);verEstadoMiViaje(idGuardado);}}
+function verificarSesionCliente(){let ca=JSON.parse(localStorage.getItem('clienteActual')||'null'); initMap(); if(ca){document.getElementById('box-login-cliente').style.display='none';document.getElementById('box-cliente-viaje').style.display='block';setTimeout(()=>{if(map) map.invalidateSize(); ubicarClienteAutomatico();},400);}else{document.getElementById('box-login-cliente').style.display='block';document.getElementById('box-cliente-viaje').style.display='none';}}
+function verificarSesionClienteLogged(){initMap();document.getElementById('box-login-cliente').style.display='none';document.getElementById('box-cliente-viaje').style.display='block';setTimeout(()=>{if(map) map.invalidateSize(); ubicarClienteAutomatico();},400);let idGuardado=localStorage.getItem('viajeActualId');if(idGuardado){if(intervaloCliente) clearInterval(intervaloCliente);intervaloCliente=setInterval(()=>verEstadoMiViaje(idGuardado),4000);verEstadoMiViaje(idGuardado);}}
 async function verEstadoMiViaje(id){
   try{
     let r=await fetch('/api/viaje/estado/'+id);
