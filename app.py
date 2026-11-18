@@ -1,7 +1,7 @@
 from flask import Flask, render_template_string, request, jsonify
 import json, os, math, time
 app = Flask(__name__)
-ADMIN_PASSWORD = "AGL2026"
+ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD")
 
 DATABASE_URL = os.environ.get("DATABASE_URL")
 if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
