@@ -108,6 +108,10 @@ input{flex:1;border:none;outline:none;font-size:13px;font-weight:600;background:
 #modal-rol{position:fixed;inset:0;z-index:99999;background:#f6f7f9;display:flex;align-items:center;justify-content:center;padding:16px}.box-rol{background:#fff;border-radius:18px;padding:18px 16px;width:100%;max-width:320px;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.15)}
 .inp{width:100%;padding:13px;margin:7px 0;border-radius:10px;border:1px solid #ddd;background:#f9f9f9}
 .btn-manual{border:1px solid #ddd;background:#fff;padding:6px 7px;border-radius:8px;font-size:11px;font-weight:800}
+.search-card{overflow:visible}
+.item{flex-wrap:wrap}
+.item input{flex:1 1 110px; min-width:0}
+.item button{font-size:10px!important; padding:5px 6px!important; white-space:nowrap}
      input.manual-act{background:#fff8c5!important}
 </style></head><body>
 <div id="alerta-radar">🚨 VIAJE CERCA! <span id="radar-txt"></span></div>
