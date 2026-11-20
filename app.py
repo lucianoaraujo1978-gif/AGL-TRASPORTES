@@ -107,6 +107,8 @@ input{flex:1;border:none;outline:none;font-size:13px;font-weight:600;background:
 .btn-confirm{position:fixed;bottom:12px;left:12px;right:12px;z-index:11;background:#000;color:#fff;font-weight:800;padding:16px;border:none;border-radius:16px;max-width:420px;margin:auto;display:none;font-size:15px}
 #modal-rol{position:fixed;inset:0;z-index:99999;background:#f6f7f9;display:flex;align-items:center;justify-content:center;padding:16px}.box-rol{background:#fff;border-radius:18px;padding:18px 16px;width:100%;max-width:320px;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.15)}
 .inp{width:100%;padding:13px;margin:7px 0;border-radius:10px;border:1px solid #ddd;background:#f9f9f9}
+.btn-manual{border:1px solid #ddd;background:#fff;padding:6px 7px;border-radius:8px;font-size:11px;font-weight:800}
+     input.manual-act{background:#fff8c5!important}
 </style></head><body>
 <div id="alerta-radar">🚨 VIAJE CERCA! <span id="radar-txt"></span></div>
 <div id="modal-rol"><div class="box-rol"><h2>🚕 AGL Transporte</h2><p style="margin:8px 0 14px;color:#666;font-size:11px">V49 - INDRIVE FULL ROUTE</p>
@@ -117,11 +119,11 @@ input{flex:1;border:none;outline:none;font-size:13px;font-weight:600;background:
 <div id="box-login-cliente" style="padding:20px;max-width:400px;margin:70px auto 0;background:#fff;position:relative;z-index:20;border-radius:16px"><h2 style="text-align:center">👤 Cliente</h2><div id="form-login-c"><input id="cli-tel" class="inp" placeholder="Celular"><input id="cli-pass" class="inp" type="password" placeholder="Contraseña"><button onclick="clienteLogin()" style="width:100%;padding:13px;background:#000;color:#fff;border:none;border-radius:10px">ENTRAR</button><p style="text-align:center;margin:10px 0">¿Nuevo?</p><button onclick="mostrarRegistroCli()" style="width:100%;padding:11px;background:#fff;border:1px solid #000;border-radius:10px">REGISTRARME</button><button onclick="volverAlInicio()" style="width:100%;margin-top:10px;padding:11px;background:#eee;border:none;border-radius:10px">⬅ MENU</button><p id="msg-cli" style="color:red;text-align:center;font-size:12px"></p></div><div id="form-registro-c" style="display:none"><input id="cli-reg-nombre" class="inp" placeholder="Nombre"><input id="cli-reg-tel" class="inp" placeholder="Celular"><input id="cli-reg-pass" class="inp" type="password" placeholder="Contraseña"><button onclick="clienteRegistrar()" style="width:100%;padding:13px;background:#00c853;color:#fff;border:none;border-radius:10px">CREAR CUENTA</button><button onclick="mostrarLoginCli()" style="width:100%;padding:10px;background:none;border:none;color:#1976d2">Ya tengo cuenta</button></div></div>
 <div id="box-cliente-viaje" style="display:none"><div id="map"></div><button onclick="miUbicacion()" style="position:fixed;bottom:160px;right:14px;z-index:12;width:50px;height:50px;background:#fff;border:none;border-radius:50%;box-shadow:0 4px 18px rgba(0,0,0,.3)">📍</button>
 <div class="top-bar"><button class="menu-btn" onclick="toggleMenu()">☰</button><div class="search-card">
-<div class="item"><div class="dot o"></div><input id="origen" placeholder="Origen - tu ubicación"><button onclick="cambiarOrigen()" style="border:none;background:#eef5ff;padding:6px 8px;border-radius:8px;font-size:11px;font-weight:800;white-space:nowrap">📍 CAMBIAR</button><button onclick="usarMiUbicacionComoOrigen()" style="border:none;background:#00c853;color:#fff;padding:6px 8px;border-radius:8px;font-size:11px;font-weight:800;white-space:nowrap">MI UBIC.</button></div>
+<div class="item"><div class="dot o"></div><input id="origen" placeholder="Origen - tu ubicación"><button onclick="toggleManual('origen')">✏️ MANUAL</button><button onclick="cambiarOrigen()" style="border:none;background:#eef5ff;padding:6px 8px;border-radius:8px;font-size:11px;font-weight:800;white-space:nowrap">📍 CAMBIAR</button><button onclick="usarMiUbicacionComoOrigen()" style="border:none;background:#00c853;color:#fff;padding:6px 8px;border-radius:8px;font-size:11px;font-weight:800;white-space:nowrap">MI UBIC.</button></div>
 <div class="item" id="boxP1" style="display:none"><div class="dot" style="background:#ffcc00"></div><input id="parada1" placeholder="Parada 1"><button onclick="quitarParada(1)" style="border:none;background:#eee;width:26px;height:26px;border-radius:50%">✕</button></div>
 <div class="item" id="boxP2" style="display:none"><div class="dot" style="background:#ff9500"></div><input id="parada2" placeholder="Parada 2"><button onclick="quitarParada(2)" style="border:none;background:#eee;width:26px;height:26px;border-radius:50%">✕</button></div>
 <div class="item" id="boxP3" style="display:none"><div class="dot" style="background:#00e5ff"></div><input id="parada3" placeholder="Parada 3"><button onclick="quitarParada(3)" style="border:none;background:#eee;width:26px;height:26px;border-radius:50%">✕</button></div>
-<div class="item"><div class="dot d"></div><input id="destino" placeholder="Destino - toca el mapa"></div>
+<div class="item"><div class="dot d"></div><input id="destino" placeholder="Destino - toca el mapa"><button onclick="toggleManual('destino')">✏️ MANUAL</button></div>
 </div></div>
 <div id="menu"><div class="menu-header"><b>🚕 AGL AGS</b><button onclick="toggleMenu()" style="width:34px;height:34px;border-radius:50%;background:#111;color:#fff;border:none">✕</button></div>
 <div class="menu-body">
@@ -152,7 +154,15 @@ input{flex:1;border:none;outline:none;font-size:13px;font-weight:600;background:
 <div id="vista-admin" style="display:none"><div id="admin-login" style="padding:20px;max-width:400px;margin:80px auto;background:#fff;border-radius:16px"><h2 style="text-align:center">🔐 ADMIN</h2><input id="admin-pass-input" type="password" class="inp" placeholder="AGL2026"><button onclick="adminLogin()" style="width:100%;padding:14px;background:#000;color:#fff;border:none;border-radius:10px">ENTRAR</button><button onclick="volverAlInicio()" style="width:100%;margin-top:10px;padding:12px;background:#eee;border:none;border-radius:12px">⬅ VOLVER</button></div><div id="admin-panel" style="display:none;padding:12px;background:#eef2f7;min-height:100vh"><h1>🔐 ADMIN V49</h1><div style="display:flex;gap:6px;margin:12px 0"><button onclick="adminTab('viajes')" id="btn-viajes" style="flex:1;padding:12px;background:#000;color:#fff;border:none;border-radius:10px;font-weight:800">Viajes</button><button onclick="adminTab('choferes')" id="btn-choferes" style="flex:1;padding:12px;background:#fff;border:1px solid #000;border-radius:10px;font-weight:800">Choferes</button><button onclick="adminTab('clientes')" id="btn-clientes" style="flex:1;padding:12px;background:#fff;border:1px solid #000;border-radius:10px;font-weight:800">Clientes</button></div><div id="admin-viajes"></div><div id="admin-choferes" style="display:none"></div><div id="admin-clientes" style="display:none"></div><button onclick="volverAlInicio()" style="margin-top:12px;padding:12px;width:100%;background:#000;color:#fff;border:none;border-radius:10px">Volver</button></div></div>
 <script>
 let map=null,origenMarker=null,destinoMarker=null,parada1Marker=null,parada2Marker=null,parada3Marker=null,routeLine,kmActual=0,precioActual=0,tiempoActual=0,numParadasVisibles=0,miChofer=null,miPos={lat:21.8853,lng:-102.2916},origenLatLng=null,destinoLatLng=null;
-let modoCambiarOrigen=false;    
+let modoCambiarOrigen=false;
+let manual={origen:false,destino:false};
+function toggleManual(campo){
+  manual[campo]=!manual[campo];
+  let inp=document.getElementById(campo);
+  inp.focus();
+  if(manual[campo]){ inp.placeholder="Escribe tu dirección aquí..."; inp.style.background="#fff8c5"; }
+  else{ inp.style.background=""; }
+}
 function toggleMenu(){document.getElementById('menu').classList.toggle('act');document.getElementById('overlay').classList.toggle('act');}
 function initMap(){
   if(map){setTimeout(()=>map.invalidateSize(),200);return;}
@@ -183,6 +193,7 @@ const naranjaIcon=new L.Icon({iconUrl:'https://raw.githubusercontent.com/pointhi
 const azulIcon=new L.Icon({iconUrl:'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',shadowUrl:'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',iconSize:[35,55],iconAnchor:[17,55]});
 function makeDraggable(m, cb){m.on('dragend', (ev)=>{ cb(ev.target.getLatLng()); });}
 async function ponerDireccion(lat,lng,inputId){
+if(manual[inputId]) return;
   try{
     let r=await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`);
     let j=await r.json();
